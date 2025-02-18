@@ -1,0 +1,11 @@
+apiVersion: drowzee.challengr.io/v1beta1
+kind: SleepSchedule
+metadata:
+  name: testing
+spec:
+  sleepTime: '02:32pm'
+  wakeTime: '03:00pm'
+  timezone: 'Australia/Sydney'
+  deployments:
+    - name: dummy-service
+  ingressName: dummy-service

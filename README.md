@@ -1,18 +1,23 @@
 # Drowzee
 
-To start your Phoenix server:
+A K8s operator to put deployments to sleep (scaled down), and wake them up (scaled up), according to a sleep schedule.
 
-  * Run `mix setup` to install and setup dependencies
-  * Start Phoenix endpoint with `mix phx.server` or inside IEx with `iex -S mix phx.server`
+### Useful dev commands
 
-Now you can visit [`localhost:4000`](http://localhost:4000) from your browser.
+```
+k get CustomResourceDefinitions
 
-Ready to run in production? Please [check our deployment guides](https://hexdocs.pm/phoenix/deployment.html).
+k delete CustomResourceDefinition sleepschedules.drowzee.challengr.io
 
-## Learn more
+k apply -f manifest.yaml
 
-  * Official website: https://www.phoenixframework.org/
-  * Guides: https://hexdocs.pm/phoenix/overview.html
-  * Docs: https://hexdocs.pm/phoenix
-  * Forum: https://elixirforum.com/c/phoenix-forum
-  * Source: https://github.com/phoenixframework/phoenix
+k apply -f sleep_schedule.yaml
+
+kubectl get dt --watch
+```
+
+```
+helm upgrade --install ingress-nginx ingress-nginx \
+  --repo https://kubernetes.github.io/ingress-nginx \
+  --namespace default
+```

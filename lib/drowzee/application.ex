@@ -11,7 +11,7 @@ defmodule Drowzee.Application do
       DrowzeeWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:drowzee, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Drowzee.PubSub},
-      {Drowzee.Operator, conn: Drowzee.K8sConn.get!(env)},
+      {Drowzee.Operator, conn: Drowzee.K8sConn.get!(Mix.env()), enable_leader_election: false},
 
       # Start to serve requests, typically the last entry
       DrowzeeWeb.Endpoint

@@ -35,7 +35,7 @@ defmodule Drowzee.Operator do
           kind: "SleepSchedule",
           singular: "sleepschedule",
           plural: "sleepschedules",
-          shortNames: []
+          shortNames: ["ss"]
         },
         group: "drowzee.challengr.io",
         versions: [Drowzee.API.V1Beta1.SleepSchedule],
