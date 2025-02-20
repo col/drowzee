@@ -1,7 +1,7 @@
 defmodule Drowzee.SleepChecker do
   def naptime?(sleep_time, wake_time, timezone) do
     now = DateTime.now!(timezone)
-    today_date = Date.utc_today()
+    today_date = DateTime.to_date(now)
 
     {:ok, sleep_datetime} = parse_time(sleep_time, today_date, timezone)
     {:ok, wake_datetime} = parse_time(wake_time, today_date, timezone)

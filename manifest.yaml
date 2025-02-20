@@ -4,9 +4,10 @@ spec:
   group: drowzee.challengr.io
   names:
     kind: SleepSchedule
-    singular: sleepschedule
     plural: sleepschedules
-    shortNames: []
+    singular: sleepschedule
+    shortNames:
+      - ss
   versions:
     - name: v1beta1
       deprecated: false
@@ -90,6 +91,10 @@ spec:
           type: string
           description: Time for a nap?
           jsonPath: .status.conditions[?(@.type == "naptime")].status
+        - name: ingressBackup?
+          type: string
+          description: Ingress Backup
+          jsonPath: .status.conditions[?(@.type == "ingressBackup")].status
       subresources:
         status: {}
       served: true

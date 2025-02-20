@@ -92,6 +92,7 @@ defmodule Drowzee.API.V1Beta1.SleepSchedule do
         %{name: "timezone", type: :string, description: "Timezone", jsonPath: ".spec.timezone"},
         %{name: "deployments", type: :string, description: "Deployments", jsonPath: ".spec.deployments[*].name"},
         %{name: "naptime?", type: :string, description: "Time for a nap?", jsonPath: ".status.conditions[?(@.type == \"naptime\")].status"},
+        %{name: "ingressBackup?", type: :string, description: "Ingress Backup", jsonPath: ".status.conditions[?(@.type == \"ingressBackup\")].status"},
       ]
     )
     |> add_observed_generation_status()
