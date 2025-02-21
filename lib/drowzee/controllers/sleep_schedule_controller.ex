@@ -4,6 +4,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   """
   use Bonny.ControllerV2
+  import Drowzee.Axn
 
   step Bonny.Pluggable.SkipObservedGenerations
   step :handle_event
@@ -12,9 +13,10 @@ defmodule Drowzee.Controller.SleepScheduleController do
   def handle_event(%Bonny.Axn{action: action} = axn, _opts)
       when action in [:add, :modify, :reconcile] do
     axn
-    |> set_naptime_condition()
+    |> add_default_conditions()
+    |> set_naptime_assigns()
     |> backup_ingress()
-    |> apply_naptime()
+    |> update_state()
     |> success_event()
   end
 
@@ -24,12 +26,19 @@ defmodule Drowzee.Controller.SleepScheduleController do
     axn
   end
 
-  defp set_naptime_condition(%Bonny.Axn{resource: resource} = axn) do
+  defp add_default_conditions(axn) do
+    axn
+    |> set_default_condition("Sleeping", false, "InitialValue", "New wake schedule")
+    |> set_default_condition("Transitioning", false, "NoTransition", "No transition in progress")
+    |> set_default_condition("ManualOverride", false, "NoManualOverride", "No manual override present")
+    |> set_default_condition("Error", false, "NoError", "No error present")
+  end
+
+  defp set_naptime_assigns(%Bonny.Axn{resource: resource} = axn) do
     sleep_time = resource["spec"]["sleepTime"]
     wake_time = resource["spec"]["wakeTime"]
     timezone = resource["spec"]["timezone"]
-    naptime = Drowzee.SleepChecker.naptime?(sleep_time, wake_time, timezone)
-    set_condition(axn, "naptime", naptime, "Time for a nap?")
+    %{axn | assigns: Map.put(axn.assigns, :naptime, Drowzee.SleepChecker.naptime?(sleep_time, wake_time, timezone))}
   end
 
   # Backup ingress
@@ -54,7 +63,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     with {:ok, ingress} <- get_ingress(axn),
          :ok <- check_original_ingress(ingress),
          {:ok, _configmap} <- create_ingress_backup(axn, ingress) do
-      set_condition(axn, "ingressBackup", true, "Original ingress backed up")
+      set_condition(axn, "ingressBackup", true, "Backup", "Original ingress backed up")
     else
       {:error, error} ->
         IO.inspect("Failed to backup ingress: #{inspect(error)}")
@@ -67,7 +76,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
       {:ok, ingress} ->
         with :ok <- check_original_ingress(ingress),
             {:ok, _configmap} <- create_ingress_backup(axn, ingress) do
-          set_condition(axn, "ingressBackup", true, "Original ingress backed up")
+          set_condition(axn, "ingressBackup", true, "Backup", "Original ingress backed up")
         else
           {:error, error} ->
             IO.puts("WARN - Failed to update ingress backup: #{inspect(error)}")
@@ -80,17 +89,71 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  defp apply_naptime(%Bonny.Axn{} = axn) do
-    case get_naptime_condition(axn) do
-      %{"status" => "True"} ->
+  defp update_state(%Bonny.Axn{} = axn) do
+    with {:ok, sleeping} <- get_condition(axn, "Sleeping"),
+         {:ok, transitioning} <- get_condition(axn, "Transitioning") do
+      naptime = axn.assigns[:naptime]
+      sleeping_value = sleeping["status"] == "True"
+      transitioning_value = transitioning["status"] == "True"
+      case {sleeping_value, transitioning_value, naptime} do
+        {false, false, true} -> initiate_sleep(axn)
+        {false, true, true} -> check_sleep_transition(axn)
+        {true, false, false} -> initiate_wake_up(axn)
+        {true, true, false} -> check_wake_up_transition(axn)
+        {_, _, _} -> axn # no action
+      end
+    else
+      {:error, _error} -> axn # Conditions should be present except for the first event
+    end
+  end
+
+  defp initiate_sleep(axn) do
+    axn
+    |> set_condition("Transitioning", true, "Sleeping", "Going to sleep")
+    |> put_ingress_to_sleep()
+    |> scale_down_deployments()
+  end
+
+  defp initiate_wake_up(axn) do
+    axn
+    |> set_condition("Transitioning", true, "WakingUp", "Waking up")
+    |> wake_up_ingress()
+    |> scale_up_deployments()
+  end
+
+  defp check_sleep_transition(axn) do
+    # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled up
+    # TODO: Iterate through the deployments and confirm the pods are running
+    case get_ingress(axn) do
+      {:ok, ingress} ->
+        if Drowzee.Ingress.sleeping_annotation?(ingress) do
+          axn
+          |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
+          |> set_condition("Sleeping", true, "ScheduledSleep", "Deployments have been scaled down and ingress updated.")
+        else
+          axn
+        end
+      {:error, error} ->
+        IO.inspect("Error checking sleep transition: #{inspect(error)}")
         axn
-        |> put_ingress_to_sleep()
-        |> scale_down_deployments()
-      %{"status" => "False"} ->
+    end
+  end
+
+  defp check_wake_up_transition(axn) do
+    # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled down
+    # TODO: Iterate through the deployments and confirm the pods are running
+    case get_ingress(axn) do
+      {:ok, ingress} ->
+        unless Drowzee.Ingress.sleeping_annotation?(ingress) do
+          axn
+          |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
+          |> set_condition("Sleeping", false, "ScheduledWakeup", "Deployments have been scaled up and ingress restored.")
+        else
+          axn
+        end
+      {:error, error} ->
+        IO.inspect("Error checking sleep transition: #{inspect(error)}")
         axn
-        |> wake_up_ingress()
-        |> scale_up_deployments()
-      _ -> axn
     end
   end
 
@@ -121,12 +184,6 @@ defmodule Drowzee.Controller.SleepScheduleController do
         IO.puts("Error: Could not find deployment with name #{deployment["name"]}, namespace: #{resource["metadata"]["namespace"]}, reason: #{inspect(reason)}")
         {:error, reason}
     end
-  end
-
-  defp get_naptime_condition(%Bonny.Axn{status: status}) do
-    status["conditions"]
-    |> Enum.filter(&(&1["type"] == "naptime"))
-    |> List.first()
   end
 
   defp get_ingress(%Bonny.Axn{resource: resource, conn: conn}) do

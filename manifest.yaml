@@ -32,6 +32,8 @@ spec:
                           - 'False'
                       type:
                         type: string
+                      reason:
+                        type: string
                       lastHeartbeatTime:
                         type: string
                         format: date-time

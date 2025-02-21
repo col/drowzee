@@ -14,7 +14,7 @@
             <%= String.capitalize(sleep_schedule["metadata"]["name"]) %>
           </h2>
 
-          <%= if naptime_condition(sleep_schedule)["status"] == "True" do %>
+          <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
             <.link
               phx-click="wake_schedule"
               phx-value-schedule={sleep_schedule["metadata"]["name"]}
@@ -49,11 +49,40 @@
         </div>
 
         <div class="mt-4 text-sm">
-          💤 <strong>Naptime?</strong>
-          <span class={["font-semibold", naptime_class(sleep_schedule)]}>
-            <%= naptime_condition(sleep_schedule)["status"] %>
+          💤 <strong>Sleeping</strong>
+          <span class={["font-semibold", condition_class(sleep_schedule, "Sleeping")]}>
+            <%= get_condition(sleep_schedule, "Sleeping")["status"] %>
           </span>
         </div>
+
+        <div class="mt-4 text-sm">
+          💤 <strong>Transitioning</strong>
+          <span class={["font-semibold", condition_class(sleep_schedule, "Transitioning")]}>
+            <%= get_condition(sleep_schedule, "Transitioning")["status"] %>
+          </span>
+        </div>
+
+        <div class="mt-4 text-sm">
+          💤 <strong>Manual Override</strong>
+          <span class={["font-semibold", condition_class(sleep_schedule, "ManualOverride")]}>
+            <%= get_condition(sleep_schedule, "ManualOverride")["status"] %>
+          </span>
+        </div>
+
+        <div class="mt-4 text-sm">
+          💤 <strong>Error</strong>
+          <span class={["font-semibold", condition_class(sleep_schedule, "Error")]}>
+            <%= get_condition(sleep_schedule, "Error")["status"] %>
+          </span>
+        </div>
+
+        <div class="mt-4 text-sm">
+          📦 <strong>Ingress Backup?</strong>
+          <span class={["font-semibold", condition_class(sleep_schedule, "ingressBackup")]}>
+            <%= get_condition(sleep_schedule, "ingressBackup")["status"] %>
+          </span>
+        </div>
+
       </li>
     <% end %>
   </ul>

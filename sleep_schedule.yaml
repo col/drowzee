@@ -3,8 +3,8 @@ kind: SleepSchedule
 metadata:
   name: testing
 spec:
-  sleepTime: '10:50am'
-  wakeTime: '11:00am'
+  sleepTime: '09:00pm'
+  wakeTime: '09:00am'
   timezone: 'Australia/Sydney'
   deployments:
     - name: dummy-service

@@ -21,3 +21,7 @@ helm upgrade --install ingress-nginx ingress-nginx \
   --repo https://kubernetes.github.io/ingress-nginx \
   --namespace default
 ```
+
+## Sleep Schedule Status
+
+See [Sleep Schedule Status](SleepScheduleStatus.md) for more information.

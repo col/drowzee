@@ -8,14 +8,14 @@ defmodule DrowzeeWeb.PageHTML do
 
   embed_templates "page_html/*"
 
-  def naptime_condition(sleep_schedule) do
+  def get_condition(sleep_schedule, type) do
     sleep_schedule["status"]["conditions"]
-    |> Enum.filter(&(&1["type"] == "naptime"))
-    |> List.first()
+    |> Enum.filter(&(&1["type"] == type))
+    |> List.first() || %{}
   end
 
-  def naptime_class(sleep_schedule) do
-    if naptime_condition(sleep_schedule)["status"] == "True" do
+  def condition_class(sleep_schedule, type) do
+    if get_condition(sleep_schedule, type)["status"] == "True" do
       "text-green-600"
     else
       "text-red-600"
