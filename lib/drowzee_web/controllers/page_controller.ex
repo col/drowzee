@@ -2,8 +2,10 @@ defmodule DrowzeeWeb.PageController do
   use DrowzeeWeb, :controller
 
   def home(conn, _params) do
-    # The home page is often custom made,
-    # so skip the default app layout.
+    operation = K8s.Client.list("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: "default")
+    {:ok, list} = K8s.Client.run(Drowzee.K8sConn.get!(Mix.env()), operation)
+    conn = assign(conn, :sleep_schedules, list["items"])
+
     render(conn, :home, layout: false)
   end
 end

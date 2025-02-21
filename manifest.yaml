@@ -145,6 +145,25 @@ rules:
       - events.k8s.io
     verbs:
       - '*'
+  - resources:
+      - deployments
+    apiGroups:
+      - "apps"
+    verbs:
+      - '*'
+  - resources:
+      - ingresses
+    apiGroups:
+      - networking.k8s.io
+    verbs:
+      - '*'
+  - resources:
+      - services
+      - configmaps      
+    apiGroups:
+      - ""
+    verbs:
+      - '*'
 
 ---
 metadata:

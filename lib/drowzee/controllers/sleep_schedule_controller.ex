@@ -11,8 +11,6 @@ defmodule Drowzee.Controller.SleepScheduleController do
   # apply the resource
   def handle_event(%Bonny.Axn{action: action} = axn, _opts)
       when action in [:add, :modify, :reconcile] do
-    # IO.puts("Apply: #{inspect(axn.resource)}")
-
     axn
     |> set_naptime_condition()
     |> backup_ingress()
@@ -116,11 +114,11 @@ defmodule Drowzee.Controller.SleepScheduleController do
         case K8s.Client.run(axn.conn, K8s.Client.update(deployment)) do
           {:ok, deployment} -> {:ok, deployment}
           {:error, reason} ->
-            IO.puts("Error scaling up deployment: #{reason}")
+            IO.puts("Error scaling up deployment: #{inspect(reason)}")
             {:error, reason}
         end
       {:error, reason} ->
-        IO.puts("Error: Could not find deployment with name #{deployment["name"]}, namespace: #{resource["metadata"]["namespace"]}, reason: #{reason}")
+        IO.puts("Error: Could not find deployment with name #{deployment["name"]}, namespace: #{resource["metadata"]["namespace"]}, reason: #{inspect(reason)}")
         {:error, reason}
     end
   end
