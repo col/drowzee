@@ -73,30 +73,30 @@ spec:
                   type: string
                   description: The ingress that will be slept/woken.
       additionalPrinterColumns:
-        - name: sleepTime
+        - name: SleepTime
           type: string
           description: Starts Sleeping
           jsonPath: .spec.sleepTime
-        - name: wakeTime
+        - name: WakeTime
           type: string
           description: Wakes Up
           jsonPath: .spec.wakeTime
-        - name: timezone
+        - name: tTimezone
           type: string
           description: Timezone
           jsonPath: .spec.timezone
-        - name: deployments
+        - name: Deployments
           type: string
           description: Deployments
           jsonPath: .spec.deployments[*].name
-        - name: naptime?
+        - name: Sleeping?
           type: string
-          description: Time for a nap?
-          jsonPath: .status.conditions[?(@.type == "naptime")].status
-        - name: ingressBackup?
+          description: Current Status
+          jsonPath: .status.conditions[?(@.type == "Sleeping")].status
+        - name: ManualOverride?
           type: string
-          description: Ingress Backup
-          jsonPath: .status.conditions[?(@.type == "ingressBackup")].status
+          description: Status overridden by user
+          jsonPath: .status.conditions[?(@.type == "ManualOverride")].status
       subresources:
         status: {}
       served: true

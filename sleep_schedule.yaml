@@ -3,9 +3,35 @@ kind: SleepSchedule
 metadata:
   name: testing
 spec:
-  sleepTime: '09:00pm'
+  sleepTime: '10:00pm'
   wakeTime: '09:00am'
   timezone: 'Australia/Sydney'
   deployments:
     - name: dummy-service
   ingressName: dummy-service
+---
+apiVersion: drowzee.challengr.io/v1beta1
+kind: SleepSchedule
+metadata:
+  name: service1
+spec:
+  sleepTime: '10:00pm'
+  wakeTime: '09:00am'
+  timezone: 'Australia/Sydney'
+  deployments:
+    - name: service1
+    - name: service1-worker
+  ingressName: service1
+---
+apiVersion: drowzee.challengr.io/v1beta1
+kind: SleepSchedule
+metadata:
+  name: service2
+spec:
+  sleepTime: '10:00pm'
+  wakeTime: '09:00am'
+  timezone: 'Australia/Sydney'
+  deployments:
+    - name: service2
+    - name: service2-worker
+  ingressName: service2

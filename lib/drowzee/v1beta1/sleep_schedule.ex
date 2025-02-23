@@ -87,12 +87,12 @@ defmodule Drowzee.API.V1Beta1.SleepSchedule do
         }
       },
       additionalPrinterColumns: [
-        %{name: "sleepTime", type: :string, description: "Starts Sleeping", jsonPath: ".spec.sleepTime"},
-        %{name: "wakeTime", type: :string, description: "Wakes Up", jsonPath: ".spec.wakeTime"},
-        %{name: "timezone", type: :string, description: "Timezone", jsonPath: ".spec.timezone"},
-        %{name: "deployments", type: :string, description: "Deployments", jsonPath: ".spec.deployments[*].name"},
-        %{name: "naptime?", type: :string, description: "Time for a nap?", jsonPath: ".status.conditions[?(@.type == \"naptime\")].status"},
-        %{name: "ingressBackup?", type: :string, description: "Ingress Backup", jsonPath: ".status.conditions[?(@.type == \"ingressBackup\")].status"},
+        %{name: "SleepTime", type: :string, description: "Starts Sleeping", jsonPath: ".spec.sleepTime"},
+        %{name: "WakeTime", type: :string, description: "Wakes Up", jsonPath: ".spec.wakeTime"},
+        %{name: "Timezone", type: :string, description: "Timezone", jsonPath: ".spec.timezone"},
+        %{name: "Deployments", type: :string, description: "Deployments", jsonPath: ".spec.deployments[*].name"},
+        %{name: "Sleeping?", type: :string, description: "Current Status", jsonPath: ".status.conditions[?(@.type == \"Sleeping\")].status"},
+        %{name: "ManualOverride?", type: :string, description: "Status overridden by user", jsonPath: ".status.conditions[?(@.type == \"ManualOverride\")].status"}
       ]
     )
     |> add_observed_generation_status()

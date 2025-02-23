@@ -8,7 +8,8 @@ defmodule Drowzee.Axn do
   #   type :: binary()
   # ) :: t()
   def get_condition(axn, type) do
-    case Enum.filter(axn.resource["status"]["conditions"], fn cond -> cond["type"] == type end) do
+    conditions = get_in(axn.resource, ["status", "conditions"]) || []
+    case Enum.filter(conditions, fn cond -> cond["type"] == type end) do
       [] -> {:error, :not_found}
       [condition] -> {:ok, condition}
       [_|_] -> {:error, :multiple}
