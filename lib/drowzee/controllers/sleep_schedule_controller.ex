@@ -9,7 +9,6 @@ defmodule Drowzee.Controller.SleepScheduleController do
   step Bonny.Pluggable.SkipObservedGenerations
   step :handle_event
 
-  # apply the resource
   def handle_event(%Bonny.Axn{action: action} = axn, _opts)
       when action in [:add, :modify, :reconcile] do
     axn
@@ -17,12 +16,18 @@ defmodule Drowzee.Controller.SleepScheduleController do
     |> set_naptime_assigns()
     |> backup_ingress()
     |> update_state()
+    |> publish_event()
     |> success_event()
   end
 
   # delete the resource
   def handle_event(%Bonny.Axn{action: :delete} = axn, _opts) do
-    IO.inspect(axn.resource)
+    IO.puts("Delete Action - Not yet implemented!")
+    axn
+  end
+
+  defp publish_event(axn) do
+    Phoenix.PubSub.broadcast(Drowzee.PubSub, "sleep_schedule:updates", {:sleep_schedule_updated})
     axn
   end
 
@@ -91,20 +96,42 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   defp update_state(%Bonny.Axn{} = axn) do
     with {:ok, sleeping} <- get_condition(axn, "Sleeping"),
-         {:ok, transitioning} <- get_condition(axn, "Transitioning") do
-      naptime = axn.assigns[:naptime]
-      sleeping_value = sleeping["status"] == "True"
-      transitioning_value = transitioning["status"] == "True"
-      case {sleeping_value, transitioning_value, naptime} do
-        {false, false, true} -> initiate_sleep(axn)
-        {false, true, true} -> check_sleep_transition(axn)
-        {true, false, false} -> initiate_wake_up(axn)
-        {true, true, false} -> check_wake_up_transition(axn)
-        {_, _, _} -> axn # no action
+         {:ok, transitioning} <- get_condition(axn, "Transitioning"),
+         {:ok, manual_override} <- get_condition(axn, "ManualOverride") do
+      naptime = if axn.assigns[:naptime], do: :naptime, else: :not_naptime
+      sleeping_value = if sleeping["status"] == "True", do: :sleeping, else: :awake
+      transitioning_value = if transitioning["status"] == "True", do: :transition, else: :no_transition
+      manual_override_value = case {manual_override["status"], manual_override["reason"]} do
+        {"True", "WakeUp"} -> :wake_up_override
+        {"True", "Sleep"} -> :sleep_override
+        {_, _} -> :no_override
+      end
+
+      IO.inspect({sleeping_value, transitioning_value, manual_override_value, naptime}, label: "### Updating state with:")
+      case {sleeping_value, transitioning_value, manual_override_value, naptime} do
+        # Trigger action from manual override
+        {:awake, :no_transition, :sleep_override, _} -> initiate_sleep(axn)
+        {:sleeping, :no_transition, :wake_up_override, _} -> initiate_wake_up(axn)
+        # Clear manual overrides once they're no longer needed
+        {:awake, :no_transition, :wake_up_override, :not_naptime} -> axn |> clear_manual_override()
+        {:sleeping, :no_transition, :sleep_override, :naptime} -> axn |> clear_manual_override()
+        # Trigger scheduled actions
+        {:awake, :no_transition, :no_override, :naptime} -> initiate_sleep(axn)
+        {:sleeping, :no_transition, :no_override, :not_naptime} -> initiate_wake_up(axn)
+        # Await transitions (could be moved to background process)
+        {:awake, :transition, _, _} -> check_sleep_transition(axn, manual_override: manual_override_value != :no_override)
+        {:sleeping, :transition, _, _} -> check_wake_up_transition(axn, manual_override: manual_override_value != :no_override)
+        {_, _, _, _} ->
+          IO.puts "🚫 No action required for current state."
+          axn
       end
     else
       {:error, _error} -> axn # Conditions should be present except for the first event
     end
+  end
+
+  defp clear_manual_override(axn) do
+    set_condition(axn, "ManualOverride", false, "NoOverride", "No manual override in effect")
   end
 
   defp initiate_sleep(axn) do
@@ -121,16 +148,19 @@ defmodule Drowzee.Controller.SleepScheduleController do
     |> scale_up_deployments()
   end
 
-  defp check_sleep_transition(axn) do
+  defp check_sleep_transition(axn, opts \\ []) do
     # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled up
     # TODO: Iterate through the deployments and confirm the pods are running
+    manual_override = Keyword.get(opts, :manual_override, false)
     case get_ingress(axn) do
       {:ok, ingress} ->
         if Drowzee.Ingress.sleeping_annotation?(ingress) do
+          sleep_reason = if manual_override, do: "ManualSleep", else: "ScheduledSleep"
           axn
           |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
-          |> set_condition("Sleeping", true, "ScheduledSleep", "Deployments have been scaled down and ingress updated.")
+          |> set_condition("Sleeping", true, sleep_reason, "Deployments have been scaled down and ingress updated.")
         else
+          IO.puts "Ingress not yet asleep. Transition still in progress..."
           axn
         end
       {:error, error} ->
@@ -139,15 +169,17 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  defp check_wake_up_transition(axn) do
+  defp check_wake_up_transition(axn, opts \\ []) do
     # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled down
     # TODO: Iterate through the deployments and confirm the pods are running
+    manual_override = Keyword.get(opts, :manual_override, false)
     case get_ingress(axn) do
       {:ok, ingress} ->
         unless Drowzee.Ingress.sleeping_annotation?(ingress) do
+          wake_reason = if manual_override, do: "ManualWakeUp", else: "ScheduledWakeUp"
           axn
           |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
-          |> set_condition("Sleeping", false, "ScheduledWakeup", "Deployments have been scaled up and ingress restored.")
+          |> set_condition("Sleeping", false, wake_reason, "Deployments have been scaled up and ingress restored.")
         else
           axn
         end
@@ -239,6 +271,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
         {:ok, updated_ingress} <- Drowzee.Ingress.add_sleeping_annotation(updated_ingress),
         {:ok, _} <- K8s.Client.run(axn.conn, K8s.Client.update(updated_ingress)) do
       IO.puts("Sleeping Ingress #{ingress["metadata"]["name"]}")
+      # register_event(axn, nil, :Normal, "SleepingIngress", "Ingress has been put to sleep")
       axn
     else
       {:error, error} ->
@@ -255,6 +288,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
       case K8s.Client.run(axn.conn, K8s.Client.update(ingress)) do
         {:ok, _} ->
           IO.puts("Waking up Ingress #{ingress["metadata"]["name"]}")
+          # register_event(axn, nil, :Normal, "WakeUpIngress", "Ingress has been restored")
           axn
         {:error, error} ->
           IO.puts("Error waking up ingress: #{inspect(error)}")

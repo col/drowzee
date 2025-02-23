@@ -17,7 +17,8 @@
           <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
             <.link
               phx-click="wake_schedule"
-              phx-value-schedule={sleep_schedule["metadata"]["name"]}
+              phx-value-name={sleep_schedule["metadata"]["name"]}
+              phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
               class="px-4 py-2 text-sm rounded-md bg-green-500 text-white hover:bg-green-600"
               phx-disable-with="Waking..."
             >
@@ -26,7 +27,8 @@
           <% else %>
             <.link
               phx-click="sleep_schedule"
-              phx-value-schedule={sleep_schedule["metadata"]["name"]}
+              phx-value-name={sleep_schedule["metadata"]["name"]}
+              phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
               class="px-4 py-2 text-sm rounded-md bg-blue-500 text-white hover:bg-blue-600"
               phx-disable-with="Sleeping..."
             >
@@ -51,28 +53,44 @@
         <div class="mt-4 text-sm">
           💤 <strong>Sleeping</strong>
           <span class={["font-semibold", condition_class(sleep_schedule, "Sleeping")]}>
-            <%= get_condition(sleep_schedule, "Sleeping")["status"] %>
+            <%= get_condition(sleep_schedule, "Sleeping")["status"] %>            
+          </span>
+          <span>
+            <%= get_condition(sleep_schedule, "Sleeping")["reason"] %>
+            - <%= last_transaction_time(sleep_schedule, "Sleeping") %>
           </span>
         </div>
 
         <div class="mt-4 text-sm">
-          💤 <strong>Transitioning</strong>
+          🔄 <strong>Transitioning</strong>
           <span class={["font-semibold", condition_class(sleep_schedule, "Transitioning")]}>
-            <%= get_condition(sleep_schedule, "Transitioning")["status"] %>
+            <%= get_condition(sleep_schedule, "Transitioning")["status"] %>            
+          </span>
+          <span>
+            <%= get_condition(sleep_schedule, "Transitioning")["reason"] %>
+            - <%= last_transaction_time(sleep_schedule, "Transitioning") %>
           </span>
         </div>
 
         <div class="mt-4 text-sm">
-          💤 <strong>Manual Override</strong>
+          👤 <strong>Manual Override</strong>
           <span class={["font-semibold", condition_class(sleep_schedule, "ManualOverride")]}>
-            <%= get_condition(sleep_schedule, "ManualOverride")["status"] %>
+            <%= get_condition(sleep_schedule, "ManualOverride")["status"] %>            
+          </span>
+          <span>
+            <%= get_condition(sleep_schedule, "ManualOverride")["reason"] %>
+            - <%= last_transaction_time(sleep_schedule, "ManualOverride") %>
           </span>
         </div>
 
         <div class="mt-4 text-sm">
-          💤 <strong>Error</strong>
+          🚨 <strong>Error</strong>
           <span class={["font-semibold", condition_class(sleep_schedule, "Error")]}>
-            <%= get_condition(sleep_schedule, "Error")["status"] %>
+            <%= get_condition(sleep_schedule, "Error")["status"] %>            
+          </span>
+          <span>
+            <%= get_condition(sleep_schedule, "Error")["reason"] %> - <%= get_condition(sleep_schedule, "Error")["message"] %>
+            - <%= last_transaction_time(sleep_schedule, "Error") %>
           </span>
         </div>
 
@@ -80,7 +98,7 @@
           📦 <strong>Ingress Backup?</strong>
           <span class={["font-semibold", condition_class(sleep_schedule, "ingressBackup")]}>
             <%= get_condition(sleep_schedule, "ingressBackup")["status"] %>
-          </span>
+          </span>          
         </div>
 
       </li>

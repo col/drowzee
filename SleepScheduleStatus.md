@@ -10,12 +10,12 @@ This document describes the conditions used and how they reflect the state of th
 
 The `SleepSchedule` CRD uses four conditions:
 
-| **Condition**          | **Description**                                    | **Possible Values** | **Reason Examples**           |
-|------------------------|-----------------------------------------------------|---------------------|--------------------------------|
-| `Sleeping`             | Indicates whether the system is asleep.             | `True` / `False`    | `ScheduledSleep`, `ManualSleep`, `ScheduledWake`, `ManualWake` |
-| `Transitioning`        | Indicates if a sleep or wake operation is in progress. | `True` / `False`    | `ScalingDown`, `ScalingUp`    |
-| `ManualOverride` | Indicates if the current state was triggered manually. | `True` / `False`    | `UserRequest`, `NoManualOverride` |
-| `Error`                | Captures failures during operations.               | `True` / `False`    | `ScaleFailed`, `IngressUpdateFailed`, `NoError` |
+| **Condition**          | **Description**                                        | **Possible Values** | **Reason Examples**                    |
+|------------------------|--------------------------------------------------------|---------------------|----------------------------------------|
+| `Sleeping`             | Indicates whether the system is asleep.                | `True` / `False`    | `ScheduledSleep`, `ManualSleep`, `ScheduledWakeUp`, `ManualWakeUp` |
+| `Transitioning`        | Indicates if a sleep or wake operation is in progress. | `True` / `False`    | `Sleeping`, `WakingUp`, `NoTransition` |
+| `ManualOverride`       | Indicates if the current state was triggered manually. | `True` / `False`    | `Sleep`, `WakeUp`, `NoOverride`        |
+| `Error`                | Captures failures during operations.                   | `True` / `False`    | `ScaleFailed`, `IngressUpdateFailed`, `NoError` |
 
 ---
 
@@ -27,9 +27,9 @@ The `SleepSchedule` CRD uses four conditions:
 - **Reasons**:
   - `ScheduledSleep`: Sleep was initiated by the schedule.
   - `ManualSleep`: Sleep was manually triggered.
-  - `ScheduledWake`: Wake was initiated by the schedule.
-  - `ManualWake`: Wake was manually triggered.
-  - `InitialValue`: Initial value set for a new sleeo schedule.
+  - `ScheduledWakeUp`: Wake was initiated by the schedule.
+  - `ManualWakeUp`: Wake was manually triggered.
+  - `InitialValue`: Initial value set for a new sleep schedule.
 
 ### `Transitioning`
 - **True**: A sleep or wake operation is in progress.
@@ -45,7 +45,7 @@ The `SleepSchedule` CRD uses four conditions:
 - **Reasons**:
   - `WakeUp`: Manual wake up action requested the user.
   - `Sleep`: Manual sleep action requested the user.
-  - `NoManualOverride`: No manual intervention present.
+  - `NoOverride`: No manual intervention present.
 
 ### `Error`
 - **True**: The last operation failed.
@@ -92,16 +92,16 @@ status:
 ## Condition Lifecycle Overview
 
 ### Sleep Flow (Scheduled)
-1. Set `Transitioning=True` with `reason=ScalingDown`.
+1. Set `Transitioning=True` with `reason=Sleeping`.
 2. Scale down deployments and update ingress.
 3. Set `Sleeping=True`, `Transitioning=False` with `reason=ScheduledSleep`.
 
 ### Wake Flow (Manual)
 1. User triggers wake via web endpoint.
-2. Set `ManualOverrideActive=True` and `Transitioning=True` with `reason=ScalingUp`.
+2. Set `ManualOverride=True` and `Transitioning=True` with `reason=ManualWakeUp`.
 3. Scale up deployments and restore ingress.
-4. Set `Sleeping=False`, `Transitioning=False` with `reason=ManualWake`.
-5. Set `ManualOverrideActive=False`.
+4. Set `Sleeping=False`, `Transitioning=False` with `reason=ManualWakeUp`.
+5. Set `ManualOverride=False`.
 
 ### Error Handling
 - If an error occurs during sleep or wake:
@@ -112,8 +112,7 @@ status:
 
 ## Notes
 - `lastTransitionTime` reflects when the condition last changed.
-- Only one of `Sleeping=True` or `Sleeping=False` should be `True` at any time.
 - `Transitioning=True` indicates in-progress operations and should be `False` otherwise.
-- `ManualOverrideActive=True` persists until the next scheduled state change unless cleared.
+- `ManualOverride=True` persists until the next scheduled state change unless cleared.
 - `Error=True` should reset to `False` after a successful subsequent operation.
 
