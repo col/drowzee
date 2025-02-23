@@ -15,25 +15,33 @@
           </h2>
 
           <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
-            <.link
-              phx-click="wake_schedule"
-              phx-value-name={sleep_schedule["metadata"]["name"]}
-              phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-              class="px-4 py-2 text-sm rounded-md bg-green-500 text-white hover:bg-green-600"
-              phx-disable-with="Waking..."
-            >
-              Wake Up
-            </.link>
+            <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
+              <a href="#" class="px-4 py-2 text-sm rounded-md bg-green-300 text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>Waking up...</a>  
+            <% else %>
+              <.link
+                phx-click="wake_schedule"
+                phx-value-name={sleep_schedule["metadata"]["name"]}
+                phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
+                class="px-4 py-2 text-sm rounded-md bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                phx-disable-with="Waking..."
+              >
+                Wake Up
+              </.link>
+            <% end %>
           <% else %>
-            <.link
-              phx-click="sleep_schedule"
-              phx-value-name={sleep_schedule["metadata"]["name"]}
-              phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-              class="px-4 py-2 text-sm rounded-md bg-blue-500 text-white hover:bg-blue-600"
-              phx-disable-with="Sleeping..."
-            >
-              Sleep
-            </.link>
+            <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
+              <a href="#" class="px-4 py-2 text-sm rounded-md bg-blue-300 text-white disabled:opacity-50 disabled:cursor-not-allowed" disabled>Sleeping...</a>  
+            <% else %>
+              <.link
+                phx-click="sleep_schedule"
+                phx-value-name={sleep_schedule["metadata"]["name"]}
+                phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
+                class="px-4 py-2 text-sm rounded-md bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                phx-disable-with="Sleeping..."
+              >
+                Sleep
+              </.link>
+            <% end %>
           <% end %>
         </div>
 

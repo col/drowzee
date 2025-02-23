@@ -148,7 +148,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     |> scale_up_deployments()
   end
 
-  defp check_sleep_transition(axn, opts \\ []) do
+  defp check_sleep_transition(axn, opts) do
     # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled up
     # TODO: Iterate through the deployments and confirm the pods are running
     manual_override = Keyword.get(opts, :manual_override, false)
@@ -169,7 +169,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  defp check_wake_up_transition(axn, opts \\ []) do
+  defp check_wake_up_transition(axn, opts) do
     # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled down
     # TODO: Iterate through the deployments and confirm the pods are running
     manual_override = Keyword.get(opts, :manual_override, false)

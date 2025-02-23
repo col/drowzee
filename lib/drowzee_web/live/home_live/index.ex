@@ -28,11 +28,9 @@ defmodule DrowzeeWeb.HomeLive.Index do
   @impl true
   def handle_event("wake_schedule", %{"name" => name, "namespace" => namespace}, socket) do
     sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
-    IO.inspect(sleep_schedule, label: "Sleep Schedule Before")
 
     socket = case Drowzee.K8s.manual_wake_up(sleep_schedule) do
-      {:ok, sleep_schedule} ->
-        IO.inspect(sleep_schedule, label: "Sleep Schedule After")
+      {:ok, _sleep_schedule} ->
         socket
           |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
           |> put_flash(:info, "Waking up #{name}")
@@ -41,6 +39,7 @@ defmodule DrowzeeWeb.HomeLive.Index do
           |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
           |> put_flash(:error, "Failed to wake up #{name}: #{inspect(error)}")
     end
+    Process.send_after(self(), :clear_flash, 5000)
 
     {:noreply, socket}
   end
@@ -48,11 +47,9 @@ defmodule DrowzeeWeb.HomeLive.Index do
   @impl true
   def handle_event("sleep_schedule", %{"name" => name, "namespace" => namespace}, socket) do
     sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
-    IO.inspect(sleep_schedule, label: "Sleep Schedule Before")
 
     socket = case Drowzee.K8s.manual_sleep(sleep_schedule) do
-      {:ok, sleep_schedule} ->
-        IO.inspect(sleep_schedule, label: "Sleep Schedule After")
+      {:ok, _sleep_schedule} ->
         socket
           |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
           |> put_flash(:info, "Sleeping #{name}")
@@ -61,8 +58,15 @@ defmodule DrowzeeWeb.HomeLive.Index do
           |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
           |> put_flash(:error, "Failed to sleep #{name}: #{inspect(error)}")
     end
+    Process.send_after(self(), :clear_flash, 5000)
 
     {:noreply, socket}
+  end
+
+  @impl true
+  def handle_info(:clear_flash, socket) do
+    IO.puts "Clearing flash..."
+    {:noreply, clear_flash(socket)}
   end
 
   @impl true
