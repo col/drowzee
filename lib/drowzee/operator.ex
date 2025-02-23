@@ -15,12 +15,12 @@ defmodule Drowzee.Operator do
   step(Bonny.Pluggable.ApplyDescendants)
 
   @impl Bonny.Operator
-  def controllers(watching_namespace, _opts) do
+  def controllers(_watching_namespace, _opts) do
     [
       %{
         query:
           K8s.Client.watch("drowzee.challengr.io/v1beta1", "SleepSchedule",
-            namespace: watching_namespace
+            namespace: :all
           ),
         controller: Drowzee.Controller.SleepScheduleController
       }

@@ -161,7 +161,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
           |> set_condition("Sleeping", true, sleep_reason, "Deployments have been scaled down and ingress updated.")
         else
           IO.puts "Ingress not yet asleep. Transition still in progress..."
-          axn
+          axn |> initiate_sleep()
         end
       {:error, error} ->
         IO.inspect("Error checking sleep transition: #{inspect(error)}")
@@ -181,7 +181,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
           |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
           |> set_condition("Sleeping", false, wake_reason, "Deployments have been scaled up and ingress restored.")
         else
-          axn
+          axn |> initiate_wake_up()
         end
       {:error, error} ->
         IO.inspect("Error checking sleep transition: #{inspect(error)}")
@@ -257,10 +257,10 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  defp get_drowzee_service(%Bonny.Axn{resource: resource, conn: conn}) do
-    # TODO: The drowzee service could be in a different namespace
-    IO.puts("Getting 'drowzee' service in namespace: #{resource["metadata"]["namespace"]}")
-    operation = K8s.Client.get("v1", :service, name: "drowzee", namespace: resource["metadata"]["namespace"])
+  defp get_drowzee_service(%Bonny.Axn{conn: conn}) do
+    IO.puts("Getting 'drowzee' service")
+    # TODO: How do we know what namespace the Drowzee service is running in?
+    operation = K8s.Client.get("v1", :service, name: "drowzee", namespace: "default")
     K8s.Client.run(conn, operation)
   end
 

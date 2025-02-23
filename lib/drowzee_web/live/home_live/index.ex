@@ -49,15 +49,12 @@ defmodule DrowzeeWeb.HomeLive.Index do
 
     socket = case Drowzee.K8s.manual_wake_up(sleep_schedule) do
       {:ok, _sleep_schedule} ->
-        socket
-        |> load_sleep_schedules()
-        |> put_flash(:info, "Waking up #{name}")
+        load_sleep_schedules(socket)
       {:error, error} ->
         socket
         |> load_sleep_schedules()
         |> put_flash(:error, "Failed to wake up #{name}: #{inspect(error)}")
     end
-    Process.send_after(self(), :clear_flash, 5000)
 
     {:noreply, socket}
   end
@@ -68,23 +65,14 @@ defmodule DrowzeeWeb.HomeLive.Index do
 
     socket = case Drowzee.K8s.manual_sleep(sleep_schedule) do
       {:ok, _sleep_schedule} ->
-        socket
-        |> load_sleep_schedules()
-        |> put_flash(:info, "Sleeping #{name}")
+        load_sleep_schedules(socket)
       {:error, error} ->
         socket
         |> load_sleep_schedules()
         |> put_flash(:error, "Failed to sleep #{name}: #{inspect(error)}")
     end
-    Process.send_after(self(), :clear_flash, 5000)
 
     {:noreply, socket}
-  end
-
-  @impl true
-  def handle_info(:clear_flash, socket) do
-    IO.puts "Clearing flash..."
-    {:noreply, clear_flash(socket)}
   end
 
   @impl true
