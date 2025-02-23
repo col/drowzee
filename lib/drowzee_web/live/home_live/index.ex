@@ -7,22 +7,40 @@ defmodule DrowzeeWeb.HomeLive.Index do
   def mount(_params, _session, socket) do
     if connected?(socket), do: Phoenix.PubSub.subscribe(Drowzee.PubSub, "sleep_schedule:updates")
 
-    socket =
-      socket
-      |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
-
     {:ok, socket}
   end
 
   @impl true
-  def handle_params(params, _url, socket) do
-    {:noreply, apply_action(socket, socket.assigns.live_action, params)}
+  def handle_params(%{"namespace" => namespace, "name" => name}, _url, socket) do
+    socket = socket
+      |> assign(:page_title, "Home")
+      |> assign(:namespace, namespace)
+      |> assign(:name, name)
+      |> load_sleep_schedules()
+
+    {:noreply, socket}
   end
 
-  defp apply_action(socket, :index, _params) do
-    socket
-    |> assign(:page_title, "Home")
-    |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
+  @impl true
+  def handle_params(%{"namespace" => namespace}, _url, socket) do
+    socket = socket
+      |> assign(:page_title, "Home")
+      |> assign(:namespace, namespace)
+      |> assign(:name, nil)
+      |> load_sleep_schedules()
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_params(_params, _url, socket) do
+    socket = socket
+      |> assign(:page_title, "Home")
+      |> assign(:namespace, nil)
+      |> assign(:name, nil)
+      |> load_sleep_schedules()
+
+    {:noreply, socket}
   end
 
   @impl true
@@ -32,12 +50,12 @@ defmodule DrowzeeWeb.HomeLive.Index do
     socket = case Drowzee.K8s.manual_wake_up(sleep_schedule) do
       {:ok, _sleep_schedule} ->
         socket
-          |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
-          |> put_flash(:info, "Waking up #{name}")
+        |> load_sleep_schedules()
+        |> put_flash(:info, "Waking up #{name}")
       {:error, error} ->
         socket
-          |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
-          |> put_flash(:error, "Failed to wake up #{name}: #{inspect(error)}")
+        |> load_sleep_schedules()
+        |> put_flash(:error, "Failed to wake up #{name}: #{inspect(error)}")
     end
     Process.send_after(self(), :clear_flash, 5000)
 
@@ -51,12 +69,12 @@ defmodule DrowzeeWeb.HomeLive.Index do
     socket = case Drowzee.K8s.manual_sleep(sleep_schedule) do
       {:ok, _sleep_schedule} ->
         socket
-          |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
-          |> put_flash(:info, "Sleeping #{name}")
+        |> load_sleep_schedules()
+        |> put_flash(:info, "Sleeping #{name}")
       {:error, error} ->
         socket
-          |> assign(:sleep_schedules, Drowzee.K8s.sleep_schedules())
-          |> put_flash(:error, "Failed to sleep #{name}: #{inspect(error)}")
+        |> load_sleep_schedules()
+        |> put_flash(:error, "Failed to sleep #{name}: #{inspect(error)}")
     end
     Process.send_after(self(), :clear_flash, 5000)
 
@@ -72,7 +90,15 @@ defmodule DrowzeeWeb.HomeLive.Index do
   @impl true
   @spec handle_info({:sleep_schedule_updated}, map()) :: {:noreply, map()}
   def handle_info({:sleep_schedule_updated}, socket) do
-    {:noreply, assign(socket, :sleep_schedules, Drowzee.K8s.sleep_schedules())}
+    {:noreply, load_sleep_schedules(socket)}
+  end
+
+  defp load_sleep_schedules(socket) do
+    if socket.assigns.name == nil do
+      assign(socket, :sleep_schedules, Drowzee.K8s.sleep_schedules(socket.assigns.namespace))
+    else
+      assign(socket, :sleep_schedules, [Drowzee.K8s.get_sleep_schedule!(socket.assigns.name, socket.assigns.namespace)])
+    end
   end
 
   def condition_class(sleep_schedule, type) do

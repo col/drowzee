@@ -14,6 +14,7 @@ apiVersion: drowzee.challengr.io/v1beta1
 kind: SleepSchedule
 metadata:
   name: service1
+  namespace: services
 spec:
   sleepTime: '10:00pm'
   wakeTime: '09:00am'
@@ -27,6 +28,7 @@ apiVersion: drowzee.challengr.io/v1beta1
 kind: SleepSchedule
 metadata:
   name: service2
+  namespace: services
 spec:
   sleepTime: '10:00pm'
   wakeTime: '09:00am'

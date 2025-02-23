@@ -18,6 +18,8 @@ defmodule DrowzeeWeb.Router do
     pipe_through :browser
 
     live "/", HomeLive.Index, :index
+    live "/:namespace", HomeLive.Index, :index
+    live "/:namespace/:name", HomeLive.Index, :index
   end
 
   # Other scopes may use custom stacks.

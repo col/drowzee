@@ -1,6 +1,6 @@
 defmodule Drowzee.K8s.SleepSchedule do
   def get_condition(sleep_schedule, type) do
-    sleep_schedule["status"]["conditions"]
+    (sleep_schedule["status"]["conditions"] || [])
     |> Enum.filter(&(&1["type"] == type))
     |> List.first()
   end

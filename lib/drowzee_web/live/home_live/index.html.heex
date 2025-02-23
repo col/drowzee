@@ -1,11 +1,25 @@
 <.flash_group flash={@flash} />
 
 <div class="w-full max-w-3xl mx-auto p-6 space-y-10">
-  <div class="flex flex-col items-center">
-    <img src={~p"/images/logo.jpeg"} alt="Logo" class="w-40 h-auto rounded-xl shadow-lg" />
-    <h1 class="text-4xl font-bold text-gray-800 mt-4">Drowzee</h1>
-    <%# <p class="text-gray-500 text-sm mt-2">Manage your deployment sleep schedules effortlessly.</p> %>
-  </div>
+  <.link navigate={~p"/"}>
+    <div class="flex justify items-center h-auto rounded-xl shadow-lg">    
+      <img src={~p"/images/logo.jpeg"} alt="Logo" class="w-40" />
+      <h1 class="text-4xl font-bold text-gray-800 mt-4">Drowzee</h1>    
+    </div>
+  </.link>
+
+  <%= if @namespace == nil do %>
+    <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4">All namespaces</h2>
+  <% else %>
+    <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4">
+      <.link navigate={~p"/#{@namespace}"}>
+        <%= String.capitalize(@namespace) %>
+      </.link>
+      <%= if @name != nil do %>
+         / <%= String.capitalize(@name) %>
+      <% end %>
+    </h2>
+  <% end %>
 
   <ul class="space-y-8">
     <%= for sleep_schedule <- @sleep_schedules do %>
@@ -17,7 +31,14 @@
             <% else %>
               😃
             <% end %>
-            <%= String.capitalize(sleep_schedule["metadata"]["name"]) %>
+            <%= if @namespace == nil do %>
+              <.link navigate={~p"/#{sleep_schedule["metadata"]["namespace"]}"}>
+                <%= String.capitalize(sleep_schedule["metadata"]["namespace"]) %>
+              </.link> / 
+            <% end %>
+            <.link navigate={~p"/#{sleep_schedule["metadata"]["namespace"]}/#{sleep_schedule["metadata"]["name"]}"}>
+              <%= String.capitalize(sleep_schedule["metadata"]["name"]) %>
+            </.link>
           </h2>
           <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
             <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>

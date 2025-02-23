@@ -2,6 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: service1
+  namespace: services
 spec:
   replicas: 1
   selector:
@@ -26,6 +27,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: service1-worker
+  namespace: services
 spec:
   replicas: 1
   selector:
@@ -50,6 +52,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: service1
+  namespace: services
 spec:
   selector:
     app: web
@@ -62,6 +65,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: service1
+  namespace: services
 spec:
   ingressClassName: nginx
   rules:

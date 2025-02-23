@@ -1,23 +1,23 @@
 defmodule Drowzee.K8s do
 
-  def sleep_schedule_list(namespace \\ "default") do
+  def sleep_schedule_list(namespace \\ nil) do
     operation = K8s.Client.list("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: namespace)
     K8s.Client.run(conn(), operation)
   end
 
-  def sleep_schedules(namespace \\ "default") do
+  def sleep_schedules(namespace \\ nil) do
     case sleep_schedule_list(namespace) do
       {:ok, list} -> list["items"]
       {:error, _error} -> []
     end
   end
 
-  def get_sleep_schedule(name, namespace \\ "default") do
+  def get_sleep_schedule(name, namespace \\ nil) do
     operation = K8s.Client.get("drowzee.challengr.io/v1beta1", "SleepSchedule", name: name, namespace: namespace)
     K8s.Client.run(conn(), operation)
   end
 
-  def get_sleep_schedule!(name, namespace \\ "default") do
+  def get_sleep_schedule!(name, namespace \\ nil) do
     {:ok, sleep_schedule} = get_sleep_schedule(name, namespace)
     sleep_schedule
   end
