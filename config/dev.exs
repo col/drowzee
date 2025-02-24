@@ -2,6 +2,10 @@ import Config
 
 config :drowzee, Drowzee.K8sConn, method: :kube_config, context: "orbstack"
 
+# Only required when NOT running in a k8s pod
+# This is used to find the drowzee service when updating deployment ingresses
+config :drowzee, :drowzee_namespace, "default"
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

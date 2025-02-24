@@ -1,5 +1,9 @@
 import Config
 
+# Only required when NOT running in a k8s pod
+# This is used to find the drowzee service when updating deployment ingresses
+config :drowzee, :drowzee_namespace, "default"
+
 # We don't run a server during test. If one is required,
 # you can enable the server option below.
 config :drowzee, DrowzeeWeb.Endpoint,

@@ -58,4 +58,14 @@ defmodule Drowzee.K8s do
   def conn() do
     Drowzee.K8sConn.get!()
   end
+
+  @default_service_account_path "/var/run/secrets/kubernetes.io/serviceaccount"
+
+  def drowzee_namespace() do
+    namespace_path = Path.join(@default_service_account_path, "namespace")
+    case File.read(namespace_path) do
+      {:ok, namespace} -> namespace
+      _ -> Application.get_env(:drowzee, :drowzee_namespace, "default")
+    end
+  end
 end

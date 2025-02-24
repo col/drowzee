@@ -259,8 +259,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   defp get_drowzee_service(%Bonny.Axn{conn: conn}) do
     IO.puts("Getting 'drowzee' service")
-    # TODO: How do we know what namespace the Drowzee service is running in?
-    operation = K8s.Client.get("v1", :service, name: "drowzee", namespace: "default")
+    operation = K8s.Client.get("v1", :service, name: "drowzee", namespace: Drowzee.K8s.drowzee_namespace())
     K8s.Client.run(conn, operation)
   end
 
