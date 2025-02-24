@@ -16,11 +16,21 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Retrieve existing charts
+        run: |
+          git clone --branch gh-pages https://github.com/col/drowzee.git existing-charts
+          mkdir -p packaged-charts
+          cp -n existing-charts/*.tgz packaged-charts/ || true
+
       - name: Set up Helm
         uses: azure/setup-helm@v3
 
       - name: Package Chart
         run: helm package ./chart --destination ./packaged-charts
+
+      - name: Generate Repository Index
+        run: |
+          helm repo index ./packaged-charts --url https://col.github.io/drowzee
 
       - name: Configure Git
         run: |
