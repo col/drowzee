@@ -7,6 +7,7 @@ config:
   HOST: "0.0.0.0"
   PHX_SERVER: "true"
   PHX_HOST: "drowzee.local"
+  BONNY_POD_NAMESPACE: "default"
 
 secrets:
   secretKeyBase: ""
