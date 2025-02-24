@@ -11,4 +11,8 @@ defmodule Drowzee.K8s.SleepSchedule do
       |> List.insert_at(-1, Drowzee.K8s.Condition.new(type, status, reason, message))
     put_in(sleep_schedule, ["status", "conditions"], new_conditions)
   end
+
+  def is_sleeping?(sleep_schedule) do
+    (get_condition(sleep_schedule, "Sleeping") || %{})["status"] == "True"
+  end
 end
