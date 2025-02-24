@@ -50,8 +50,8 @@
                 phx-click="wake_schedule"
                 phx-value-name={sleep_schedule["metadata"]["name"]}
                 phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-                class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600"
-                phx-disable-with="🌅 Waking..."
+                class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed"
+                phx-disable-with="☕️ Waking up..."
               >
                 ☕️ Wake Up
               </.link>
@@ -66,7 +66,7 @@
                 phx-click="sleep_schedule"
                 phx-value-name={sleep_schedule["metadata"]["name"]}
                 phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-                class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600"
+                class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
                 phx-disable-with="💤 Sleeping..."
               >
                 💤 Sleep

@@ -153,6 +153,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     Logger.info("Initiating sleep")
     axn
     |> backup_ingress()
+    |> update_hosts()
     |> set_condition("Transitioning", true, "Sleeping", "Going to sleep")
     |> put_ingress_to_sleep()
     |> scale_down_deployments()
@@ -164,6 +165,18 @@ defmodule Drowzee.Controller.SleepScheduleController do
     |> set_condition("Transitioning", true, "WakingUp", "Waking up")
     |> wake_up_ingress()
     |> scale_up_deployments()
+  end
+
+  defp update_hosts(axn) do
+    case get_ingress(axn) do
+      {:ok, ingress} ->
+        update_status(axn, fn status ->
+          Map.put(status, "hosts", Drowzee.K8s.Ingress.get_hosts(ingress))
+        end)
+      {:error, error} ->
+        Logger.error("Failed to get ingress: #{inspect(error)}")
+        axn
+    end
   end
 
   defp check_sleep_transition(axn, opts) do

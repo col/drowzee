@@ -18,6 +18,10 @@ spec:
             status:
               type: object
               properties:
+                hosts:
+                  type: array
+                  items:
+                    type: string
                 conditions:
                   type: array
                   items:
@@ -81,7 +85,7 @@ spec:
           type: string
           description: Wakes Up
           jsonPath: .spec.wakeTime
-        - name: tTimezone
+        - name: Timezone
           type: string
           description: Timezone
           jsonPath: .spec.timezone

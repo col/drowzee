@@ -96,6 +96,23 @@ defmodule Drowzee.API.V1Beta1.SleepSchedule do
       ]
     )
     |> add_observed_generation_status()
+    |> add_hosts_status()
     |> add_conditions()
+  end
+
+  defp add_hosts_status(version) do
+    version
+    |> put_in([Access.key(:subresources, %{}), :status], %{})
+    |> put_in(
+      [
+        Access.key(:schema, %{}),
+        Access.key(:openAPIV3Schema, %{type: :object}),
+        Access.key(:properties, %{}),
+        Access.key(:status, %{type: :object, properties: %{}}),
+        Access.key(:properties, %{}),
+        :hosts
+      ],
+      %{type: :array, items: %{type: :string}}
+    )
   end
 end

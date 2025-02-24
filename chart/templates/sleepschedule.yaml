@@ -17,6 +17,10 @@ spec:
             status:
               type: object
               properties:
+                hosts:
+                  type: array
+                  items:
+                    type: string
                 conditions:
                   type: array
                   items:

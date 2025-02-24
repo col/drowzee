@@ -17,7 +17,9 @@ defmodule DrowzeeWeb.Router do
   scope "/", DrowzeeWeb do
     pipe_through :browser
 
-    live "/", HomeLive.Index, :index
+    get "/", RedirectController, :redirect_to_sleep_schedule
+
+    live "/all", HomeLive.Index, :index
     live "/:namespace", HomeLive.Index, :index
     live "/:namespace/:name", HomeLive.Index, :index
   end
