@@ -18,7 +18,7 @@ defmodule Drowzee.MixProject do
   # Type `mix help compile.app` for more information.
   def application do
     [
-      mod: {Drowzee.Application, [Mix.env()]},
+      mod: {Drowzee.Application, []},
       extra_applications: [:logger, :runtime_tools]
     ]
   end

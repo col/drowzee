@@ -56,6 +56,6 @@ defmodule Drowzee.K8s do
   end
 
   def conn() do
-    Drowzee.K8sConn.get!(Mix.env())
+    Drowzee.K8sConn.get!()
   end
 end

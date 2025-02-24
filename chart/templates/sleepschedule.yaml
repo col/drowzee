@@ -1,0 +1,109 @@
+spec:
+  scope: Namespaced
+  group: drowzee.challengr.io
+  names:
+    kind: SleepSchedule
+    plural: sleepschedules
+    singular: sleepschedule
+    shortNames:
+      - ss
+  versions:
+    - name: v1beta1
+      deprecated: false
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            status:
+              type: object
+              properties:
+                conditions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      status:
+                        type: string
+                        enum:
+                          - 'True'
+                          - 'False'
+                      type:
+                        type: string
+                      reason:
+                        type: string
+                      lastHeartbeatTime:
+                        type: string
+                        format: date-time
+                      lastTransitionTime:
+                        type: string
+                        format: date-time
+                observedGeneration:
+                  type: integer
+            spec:
+              type: object
+              required:
+                - sleepTime
+                - timezone
+                - wakeTime
+                - deployments
+              properties:
+                deployments:
+                  type: array
+                  description: The deployments that will be slept/woken.
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                sleepTime:
+                  type: string
+                  description: 'The time that the deployment will start sleeping(format: HH:MMam/pm)'
+                wakeTime:
+                  type: string
+                  description: 'The time that the deployment will wake up (format: HH:MMam/pm)'
+                timezone:
+                  type: string
+                  description: The timezone that the input times are based in
+                ingressName:
+                  type: string
+                  description: The ingress that will be slept/woken.
+      additionalPrinterColumns:
+        - name: SleepTime
+          type: string
+          description: Starts Sleeping
+          jsonPath: .spec.sleepTime
+        - name: WakeTime
+          type: string
+          description: Wakes Up
+          jsonPath: .spec.wakeTime
+        - name: tTimezone
+          type: string
+          description: Timezone
+          jsonPath: .spec.timezone
+        - name: Deployments
+          type: string
+          description: Deployments
+          jsonPath: .spec.deployments[*].name
+        - name: Sleeping?
+          type: string
+          description: Current Status
+          jsonPath: .status.conditions[?(@.type == "Sleeping")].status
+        - name: ManualOverride?
+          type: string
+          description: Status overridden by user
+          jsonPath: .status.conditions[?(@.type == "ManualOverride")].status
+      subresources:
+        status: {}
+      served: true
+      storage: true
+      deprecationWarning:
+metadata:
+  name: sleepschedules.drowzee.challengr.io
+  labels:
+    k8s-app: drowzee
+kind: CustomResourceDefinition
+apiVersion: apiextensions.k8s.io/v1

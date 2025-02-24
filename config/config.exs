@@ -10,6 +10,8 @@ import Config
 config :drowzee,
   generators: [timestamp_type: :utc_datetime]
 
+config :drowzee, Drowzee.K8sConn, method: :kube_config
+
 # Configures the endpoint
 config :drowzee, DrowzeeWeb.Endpoint,
   url: [host: "localhost"],

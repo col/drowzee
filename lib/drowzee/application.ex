@@ -6,12 +6,12 @@ defmodule Drowzee.Application do
   use Application
 
   @impl true
-  def start(_type, [env]) do
+  def start(_type, _args) do
     children = [
       DrowzeeWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:drowzee, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Drowzee.PubSub},
-      {Drowzee.Operator, conn: Drowzee.K8sConn.get!(env), enable_leader_election: false},
+      {Drowzee.Operator, conn: Drowzee.K8sConn.get!(), enable_leader_election: false},
 
       # Start to serve requests, typically the last entry
       DrowzeeWeb.Endpoint
