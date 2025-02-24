@@ -28,11 +28,6 @@ jobs:
           VERSION=${VERSION#v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Update Chart Versions
-        run: |
-          sed -i '' "s/^version: .*/version: ${{ steps.extract_version.outputs.VERSION }}/" chart/Chart.yaml
-          sed -i '' "s/^appVersion: .*/appVersion: \"${{ steps.extract_version.outputs.VERSION }}\"/" chart/Chart.yaml
-
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
