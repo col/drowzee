@@ -3,6 +3,7 @@ name: Docker Build and Push
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
 
 jobs:
   build-and-push:
@@ -20,6 +21,14 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Extract version from tag
+        if: startsWith(github.ref, 'refs/tags/')
+        id: extract_version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          VERSION=${VERSION#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -29,3 +38,4 @@ jobs:
           tags: |
             colharris/drowzee:latest
             colharris/drowzee:${{ github.sha }}
+            ${{ steps.extract_version.outputs.version && format('colharris/drowzee:{0}', steps.extract_version.outputs.version) || '' }}
