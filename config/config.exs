@@ -47,8 +47,8 @@ config :tailwind,
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  format: "$time [$level] $message $metadata\n",
+  metadata: [:name, :namespace, :deployment, :replicas, :ingress_name, :configmap_name, :request_id]
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason

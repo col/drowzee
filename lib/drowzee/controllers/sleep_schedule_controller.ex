@@ -5,12 +5,17 @@ defmodule Drowzee.Controller.SleepScheduleController do
   """
   use Bonny.ControllerV2
   import Drowzee.Axn
+  require Logger
 
   step Bonny.Pluggable.SkipObservedGenerations
   step :handle_event
 
   def handle_event(%Bonny.Axn{action: action} = axn, _opts)
       when action in [:add, :modify, :reconcile] do
+    Logger.metadata(
+      name: axn.resource["metadata"]["name"],
+      namespace: axn.resource["metadata"]["namespace"]
+    )
     axn
     |> add_default_conditions()
     |> set_naptime_assigns()
@@ -22,7 +27,10 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   # delete the resource
   def handle_event(%Bonny.Axn{action: :delete} = axn, _opts) do
-    IO.puts("Delete Action - Not yet implemented!")
+    Logger.warning("Delete Action - Not yet implemented!")
+    # TODO:
+    # - Make sure deployments are awake
+    # - Clean up ingress backups
     axn
   end
 
@@ -59,7 +67,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
       {:ok, configmap} -> backup_ingress(axn, configmap)
       {:error, %K8s.Client.APIError{reason: "NotFound"}} -> backup_ingress(axn, nil)
       {:error, error} ->
-        IO.inspect("Failed to backup ingress: #{inspect(error)}")
+        Logger.error("Error fetching ingress backup configmap: #{inspect(error)}")
         axn
     end
   end
@@ -68,10 +76,10 @@ defmodule Drowzee.Controller.SleepScheduleController do
     with {:ok, ingress} <- get_ingress(axn),
          :ok <- check_original_ingress(ingress),
          {:ok, _configmap} <- create_ingress_backup(axn, ingress) do
-      set_condition(axn, "ingressBackup", true, "Backup", "Original ingress backed up")
+      set_condition(axn, "IngressBackup", true, "Backup", "Original ingress backed up")
     else
       {:error, error} ->
-        IO.inspect("Failed to backup ingress: #{inspect(error)}")
+        Logger.error("Error backing up ingress: #{inspect(error)}")
         axn
     end
   end
@@ -81,15 +89,16 @@ defmodule Drowzee.Controller.SleepScheduleController do
       {:ok, ingress} ->
         with :ok <- check_original_ingress(ingress),
             {:ok, _configmap} <- create_ingress_backup(axn, ingress) do
-          set_condition(axn, "ingressBackup", true, "Backup", "Original ingress backed up")
+          set_condition(axn, "IngressBackup", true, "Backup", "Original ingress backed up")
         else
-          {:error, error} ->
-            IO.puts("WARN - Failed to update ingress backup: #{inspect(error)}")
+          {:error, %K8s.Client.APIError{} = error} ->
+            # TODO: Avoid printing this warning if ingress hasn't actually changed!
+            Logger.warning("Failed to update ingress backup: #{error.message}")
             # continue with existing backup
             axn
         end
       {:error, error} ->
-        IO.inspect("Failed to backup ingress: #{inspect(error)}")
+        Logger.error("Failed to load ingress: #{inspect(error)}", ingress_name: axn.resource["spec"]["ingressName"])
         axn
     end
   end
@@ -107,7 +116,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
         {_, _} -> :no_override
       end
 
-      IO.inspect({sleeping_value, transitioning_value, manual_override_value, naptime}, label: "### Updating state with:")
+      Logger.debug(inspect({sleeping_value, transitioning_value, manual_override_value, naptime}, label: "Updating state with:"))
       case {sleeping_value, transitioning_value, manual_override_value, naptime} do
         # Trigger action from manual override
         {:awake, :no_transition, :sleep_override, _} -> initiate_sleep(axn)
@@ -122,7 +131,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
         {:awake, :transition, _, _} -> check_sleep_transition(axn, manual_override: manual_override_value != :no_override)
         {:sleeping, :transition, _, _} -> check_wake_up_transition(axn, manual_override: manual_override_value != :no_override)
         {_, _, _, _} ->
-          IO.puts "🚫 No action required for current state."
+          Logger.debug("No action required for current state.")
           axn
       end
     else
@@ -131,10 +140,12 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp clear_manual_override(axn) do
+    Logger.info("Clearing manual override")
     set_condition(axn, "ManualOverride", false, "NoOverride", "No manual override in effect")
   end
 
   defp initiate_sleep(axn) do
+    Logger.info("Initiating sleep")
     axn
     |> set_condition("Transitioning", true, "Sleeping", "Going to sleep")
     |> put_ingress_to_sleep()
@@ -142,6 +153,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp initiate_wake_up(axn) do
+    Logger.info("Initiating wake up")
     axn
     |> set_condition("Transitioning", true, "WakingUp", "Waking up")
     |> wake_up_ingress()
@@ -149,6 +161,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp check_sleep_transition(axn, opts) do
+    Logger.info("Checking sleep transition...")
     # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled up
     # TODO: Iterate through the deployments and confirm the pods are running
     manual_override = Keyword.get(opts, :manual_override, false)
@@ -160,16 +173,17 @@ defmodule Drowzee.Controller.SleepScheduleController do
           |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
           |> set_condition("Sleeping", true, sleep_reason, "Deployments have been scaled down and ingress updated.")
         else
-          IO.puts "Ingress not yet asleep. Transition still in progress..."
+          Logger.debug("Ingress not yet asleep. Transition still in progress...")
           axn |> initiate_sleep()
         end
       {:error, error} ->
-        IO.inspect("Error checking sleep transition: #{inspect(error)}")
+        Logger.error("Error checking sleep transition: #{inspect(error)}")
         axn
     end
   end
 
   defp check_wake_up_transition(axn, opts) do
+    Logger.info("Checking wake up transition...")
     # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled down
     # TODO: Iterate through the deployments and confirm the pods are running
     manual_override = Keyword.get(opts, :manual_override, false)
@@ -184,66 +198,74 @@ defmodule Drowzee.Controller.SleepScheduleController do
           axn |> initiate_wake_up()
         end
       {:error, error} ->
-        IO.inspect("Error checking sleep transition: #{inspect(error)}")
+        Logger.error("Failed to check wake up transition: #{inspect(error)}")
         axn
     end
   end
 
   defp scale_down_deployments(%Bonny.Axn{resource: resource} = axn) do
-    IO.puts("Scaling down deployments...")
+    Logger.debug("Scaling down deployments...")
     Enum.map(resource["spec"]["deployments"], &scale_deployment(axn, &1, 0))
     axn
   end
 
   defp scale_up_deployments(%Bonny.Axn{resource: resource} =axn) do
-    IO.puts("Scaling up deployments...")
+    Logger.debug("Scaling up deployments...")
     Enum.map(resource["spec"]["deployments"], &scale_deployment(axn, &1, 1))
     axn
   end
 
-  defp scale_deployment(%Bonny.Axn{resource: resource} = axn, deployment, replicas) do
-    IO.puts("Scaling deployment #{deployment["name"]}, namespace: #{resource["metadata"]["namespace"]}, to #{replicas}")
+  defp scale_deployment(%Bonny.Axn{} = axn, deployment, replicas) do
+    Logger.info("Scaling deployment", deployment: deployment["name"], replicas: replicas)
     case get_deployment(axn, deployment["name"]) do
       {:ok, deployment} ->
         deployment = put_in(deployment["spec"]["replicas"], replicas)
         case K8s.Client.run(axn.conn, K8s.Client.update(deployment)) do
           {:ok, deployment} -> {:ok, deployment}
           {:error, reason} ->
-            IO.puts("Error scaling up deployment: #{inspect(reason)}")
+            Logger.error("Failed to scale deployment: #{inspect(reason)}", deployment: deployment["name"], replicas: replicas)
             {:error, reason}
         end
       {:error, reason} ->
-        IO.puts("Error: Could not find deployment with name #{deployment["name"]}, namespace: #{resource["metadata"]["namespace"]}, reason: #{inspect(reason)}")
+        Logger.error("Failed to find deployment: #{inspect(reason)}", deployment: deployment["name"])
         {:error, reason}
     end
   end
 
   defp get_ingress(%Bonny.Axn{resource: resource, conn: conn}) do
-    IO.puts("Getting ingress #{resource["spec"]["ingressName"]}, namespace: #{resource["metadata"]["namespace"]}")
-    operation = K8s.Client.get("networking.k8s.io/v1", :ingress, name: resource["spec"]["ingressName"], namespace: resource["metadata"]["namespace"])
-    K8s.Client.run(conn, operation)
+    ingress_name = resource["spec"]["ingressName"]
+    namespace = resource["metadata"]["namespace"]
+    Logger.debug("Fetching ingress", ingress_name: ingress_name)
+    K8s.Client.get("networking.k8s.io/v1", :ingress, name: ingress_name, namespace: namespace)
+    |> K8s.Client.put_conn(conn)
+    |> K8s.Client.run()
   end
 
   defp get_deployment(%Bonny.Axn{resource: resource, conn: conn}, name) do
     namespace = resource["metadata"]["namespace"]
-    IO.puts("Getting deployment #{name}, namespace: #{namespace}")
-    operation = K8s.Client.get("apps/v1", :deployment, name: name, namespace: namespace)
-    K8s.Client.run(conn, operation)
+    Logger.debug("Fetching deployment", deployment_name: name)
+    K8s.Client.get("apps/v1", :deployment, name: name, namespace: namespace)
+    |> K8s.Client.put_conn(conn)
+    |> K8s.Client.run()
   end
 
   defp create_ingress_backup(%Bonny.Axn{resource: resource, conn: conn}, ingress) do
-    configmap_name = "#{resource["spec"]["ingressName"]}-backup"
+    configmap_name = "#{resource["spec"]["ingressName"]}-drowzee-backup"
     namespace = resource["metadata"]["namespace"]
+    Logger.debug("Creating ingress backup", configmap_name: configmap_name)
     configmap = Drowzee.ConfigMap.create_configmap(configmap_name, namespace, ingress)
-    K8s.Client.run(conn, K8s.Client.create(configmap))
+    K8s.Client.create(configmap)
+    |> K8s.Client.put_conn(conn)
+    |> K8s.Client.run()
   end
 
   defp get_ingress_backup_configmap(%Bonny.Axn{resource: resource, conn: conn}) do
-    name = "#{resource["spec"]["ingressName"]}-backup"
+    configmap_name = "#{resource["spec"]["ingressName"]}-drowzee-backup"
     namespace = resource["metadata"]["namespace"]
-    IO.puts("Getting ingress backup #{name}, namespace: #{namespace}")
-    operation = K8s.Client.get("v1", :configmap, name: name, namespace: namespace)
-    K8s.Client.run(conn, operation)
+    Logger.debug("Fetching ingress backup configmap", configmap_name: configmap_name)
+    K8s.Client.get("v1", :configmap, name: configmap_name, namespace: namespace)
+    |> K8s.Client.put_conn(conn)
+    |> K8s.Client.run()
   end
 
   defp get_ingress_backup(%Bonny.Axn{} = axn) do
@@ -252,15 +274,18 @@ defmodule Drowzee.Controller.SleepScheduleController do
       {:ok, json}
     else
       {:error, error} ->
-        IO.puts("Error loading ingress backup: #{inspect(error)}")
+        Logger.error("Failed to load ingress backup: #{inspect(error)}")
         {:error, error}
     end
   end
 
   defp get_drowzee_service(%Bonny.Axn{conn: conn}) do
-    IO.puts("Getting 'drowzee' service")
-    operation = K8s.Client.get("v1", :service, name: "drowzee", namespace: Drowzee.K8s.drowzee_namespace())
-    K8s.Client.run(conn, operation)
+    name = "drowzee"
+    namespace = Drowzee.K8s.drowzee_namespace()
+    Logger.debug("Fetching drowzee service", service_name: name, drowzee_namespace: namespace)
+    K8s.Client.get("v1", :service, name: name, namespace: namespace)
+    |> K8s.Client.put_conn(conn)
+    |> K8s.Client.run()
   end
 
   defp put_ingress_to_sleep(axn) do
@@ -269,12 +294,12 @@ defmodule Drowzee.Controller.SleepScheduleController do
         {:ok, updated_ingress} <- Drowzee.Ingress.update_for_service(ingress, service),
         {:ok, updated_ingress} <- Drowzee.Ingress.add_sleeping_annotation(updated_ingress),
         {:ok, _} <- K8s.Client.run(axn.conn, K8s.Client.update(updated_ingress)) do
-      IO.puts("Sleeping Ingress #{ingress["metadata"]["name"]}")
+      Logger.info("Updated ingress to redirect to drowzee service", ingress_name: ingress["metadata"]["name"])
       # register_event(axn, nil, :Normal, "SleepingIngress", "Ingress has been put to sleep")
       axn
     else
       {:error, error} ->
-        IO.puts("Error putting ingress to sleep: #{inspect(error)}")
+        Logger.error("Failed to put ingress to sleep: #{inspect(error)}", ingress_name: axn.resource["spec"]["ingressName"])
         axn
     end
   end
@@ -286,23 +311,23 @@ defmodule Drowzee.Controller.SleepScheduleController do
       {:ok, ingress} = Drowzee.Ingress.remove_sleeping_annotation(ingress)
       case K8s.Client.run(axn.conn, K8s.Client.update(ingress)) do
         {:ok, _} ->
-          IO.puts("Waking up Ingress #{ingress["metadata"]["name"]}")
+          Logger.info("Updated ingress to original state", ingress_name: ingress["metadata"]["name"])
           # register_event(axn, nil, :Normal, "WakeUpIngress", "Ingress has been restored")
           axn
         {:error, error} ->
-          IO.puts("Error waking up ingress: #{inspect(error)}")
+          Logger.error("Failed to restore original ingress state: #{inspect(error)}", ingress_name: ingress["metadata"]["name"])
           axn
       end
     else
       {:error, error} ->
-        IO.puts("Error waking up ingress: #{inspect(error)}")
+        Logger.error("Failed to restore original ingress state: #{inspect(error)}", ingress_name: axn.resource["spec"]["ingressName"])
         axn
     end
   end
 
   defp check_original_ingress(ingress) do
     if Drowzee.Ingress.sleeping_annotation?(ingress) do
-      {:error, "Ingress backup failed: original ingress not found"}
+      {:error, "Cannot backup sleeping ingress"}
     else
       :ok
     end

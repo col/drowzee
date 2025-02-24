@@ -6,6 +6,8 @@ config :drowzee, Drowzee.K8sConn, method: :kube_config, context: "orbstack"
 # This is used to find the drowzee service when updating deployment ingresses
 config :drowzee, :drowzee_namespace, "default"
 
+config :logger, :console, colors: [info: :green, warn: :yellow, error: :red]
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #
@@ -62,7 +64,7 @@ config :drowzee, DrowzeeWeb.Endpoint,
 config :drowzee, dev_routes: true
 
 # Do not include metadata nor timestamps in development logs
-config :logger, :console, format: "[$level] $message\n"
+config :logger, :console, format: "[$level] $message $metadata\n"
 
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
