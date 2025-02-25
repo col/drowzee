@@ -6,7 +6,7 @@ defmodule DrowzeeWeb.RedirectController do
   def redirect_to_sleep_schedule(conn, _params) do
     Logger.info("Finding sleep schedule for host: #{conn.host}")
 
-    sleep_schedule = Drowzee.K8s.sleep_schedules()
+    sleep_schedule = (Drowzee.K8s.sleep_schedules() || [])
       |> Enum.find(fn sleep_schedule -> Enum.any?(sleep_schedule["status"]["hosts"], &(&1 == conn.host)) end)
 
     if sleep_schedule == nil do

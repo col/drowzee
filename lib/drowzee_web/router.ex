@@ -18,6 +18,7 @@ defmodule DrowzeeWeb.Router do
     pipe_through :browser
 
     get "/", RedirectController, :redirect_to_sleep_schedule
+    get "/health", HealthCheckController, :health_check
 
     live "/all", HomeLive.Index, :index
     live "/:namespace", HomeLive.Index, :index
