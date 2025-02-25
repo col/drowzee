@@ -9,7 +9,7 @@ defmodule Drowzee.Operator do
 
   use Bonny.Operator, default_watch_namespace: "default"
 
-  step(Bonny.Pluggable.Logger, level: :info)
+  step(Bonny.Pluggable.Logger, level: :debug)
   step(:delegate_to_controller)
   step(Bonny.Pluggable.ApplyStatus)
   step(Bonny.Pluggable.ApplyDescendants)
