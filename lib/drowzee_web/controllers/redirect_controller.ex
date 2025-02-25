@@ -7,7 +7,7 @@ defmodule DrowzeeWeb.RedirectController do
     Logger.info("Finding sleep schedule for host: #{conn.host}")
 
     sleep_schedule = (Drowzee.K8s.sleep_schedules() || [])
-      |> Enum.find(fn sleep_schedule -> Enum.any?(sleep_schedule["status"]["hosts"], &(&1 == conn.host)) end)
+      |> Enum.find(fn sleep_schedule -> Enum.any?((sleep_schedule["status"]["hosts"] || []), &(&1 == conn.host)) end)
 
     if sleep_schedule == nil do
       Logger.warning("No sleep schedule found for host: #{conn.host}. Redirecting to '/'")
