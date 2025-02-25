@@ -29,7 +29,7 @@ COPY rel rel
 
 # compile assets (not currently required)
 # RUN npm --prefix ./assets ci --progress=false --no-audit --loglevel=error
-# RUN mix assets.deploy
+RUN mix assets.deploy
 
 # run digest for static assets
 RUN mix phx.digest
@@ -43,7 +43,7 @@ RUN mix release
 FROM elixir:1.18-slim
 
 # set runner ENV
-ENV MIX_ENV="prod"
+ENV MIX_ENV=prod
 
 # elixir expects utf8.
 ENV LANG=C.UTF-8
