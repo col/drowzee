@@ -11,4 +11,4 @@ roleRef:
 subjects:
   - name: drowzee
     kind: ServiceAccount
-    namespace: default
+    namespace: {{ .Release.Namespace }}
