@@ -98,7 +98,6 @@ defmodule Drowzee.Controller.SleepScheduleController do
     axn
     |> update_hosts()
     |> set_condition("Transitioning", true, "Sleeping", "Going to sleep")
-    |> put_ingress_to_sleep()
     |> scale_down_deployments()
   end
 
@@ -106,7 +105,6 @@ defmodule Drowzee.Controller.SleepScheduleController do
     Logger.info("Initiating wake up")
     axn
     |> set_condition("Transitioning", true, "WakingUp", "Waking up")
-    |> wake_up_ingress()
     |> scale_up_deployments()
   end
 
@@ -124,56 +122,96 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   defp check_sleep_transition(axn, opts) do
     Logger.info("Checking sleep transition...")
-    # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled up
-    # TODO: Iterate through the deployments and confirm the pods are running
-    manual_override = Keyword.get(opts, :manual_override, false)
-    case get_ingress(axn) do
-      {:ok, ingress} ->
-        if Drowzee.Ingress.redirect_annotation?(ingress) do
-          sleep_reason = if manual_override, do: "ManualSleep", else: "ScheduledSleep"
-          axn
-          |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
-          |> set_condition("Sleeping", true, sleep_reason, "Deployments have been scaled down and ingress updated.")
-        else
-          Logger.debug("Ingress not yet asleep. Transition still in progress...")
-          axn |> initiate_sleep()
-        end
-      {:error, error} ->
-        Logger.error("Error checking sleep transition: #{inspect(error)}")
-        axn
+    if all_deployments_asleep?(axn) do
+      Logger.debug("All deployments are asleep")
+      axn
+      |> put_ingress_to_sleep()
+      |> complete_sleep_transition(opts)
+    else
+      scale_down_deployments(axn)
     end
   end
 
   defp check_wake_up_transition(axn, opts) do
     Logger.info("Checking wake up transition...")
-    # TODO: This is a very lazy and non-effective way to confirm the deployments have scaled down
-    # TODO: Iterate through the deployments and confirm the pods are running
-    manual_override = Keyword.get(opts, :manual_override, false)
+    if all_deployments_ready?(axn) do
+      Logger.debug("All deployments are ready")
+      axn
+      |> wake_up_ingress()
+      |> complete_wake_up_transition(opts)
+    else
+      scale_up_deployments(axn)
+    end
+  end
+
+  defp ingress_redirected?(axn) do
     case get_ingress(axn) do
       {:ok, ingress} ->
-        unless Drowzee.Ingress.redirect_annotation?(ingress) do
-          wake_reason = if manual_override, do: "ManualWakeUp", else: "ScheduledWakeUp"
-          axn
-          |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
-          |> set_condition("Sleeping", false, wake_reason, "Deployments have been scaled up and ingress restored.")
-        else
-          axn |> initiate_wake_up()
-        end
+        Drowzee.Ingress.redirect_annotation?(ingress)
       {:error, error} ->
-        Logger.error("Failed to check wake up transition: #{inspect(error)}")
-        axn
+        Logger.error("Error checking ingress redirect status: #{inspect(error)}")
+        false
+    end
+  end
+
+  defp all_deployments_asleep?(axn) do
+    check_deployment_status?(axn, fn (status) ->
+      Map.get(status, "replicas", 0) == 0 && Map.get(status, "readyReplicas", 0) == 0
+    end)
+  end
+
+  defp all_deployments_ready?(axn) do
+    check_deployment_status?(axn, fn (status) ->
+      status["replicas"] != nil && status["readyReplicas"] != nil && status["replicas"] == status["readyReplicas"]
+    end)
+  end
+
+  defp check_deployment_status?(axn, check_fn) do
+    case get_deployments(axn) do
+      {:ok, deployments} ->
+        Enum.all?(deployments, fn deployment ->
+          Logger.debug("Deployment #{deployment["metadata"]["name"]} replicas: #{deployment["status"]["replicas"] || 0}, readyReplicas: #{deployment["status"]["readyReplicas"] || 0}")
+          check_fn.(deployment["status"])
+        end)
+      {:error, error} ->
+        Logger.error("Error checking deployments: #{inspect(error)}")
+        false
+    end
+  end
+
+  defp complete_sleep_transition(axn, opts) do
+    if ingress_redirected?(axn) do
+      Logger.info("Sleep transition complete")
+      manual_override = Keyword.get(opts, :manual_override, false)
+      sleep_reason = if manual_override, do: "ManualSleep", else: "ScheduledSleep"
+      axn
+        |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
+        |> set_condition("Sleeping", true, sleep_reason, "Deployments have been scaled down and ingress redirected.")
+    end
+  end
+
+  defp complete_wake_up_transition(axn, opts) do
+    if !ingress_redirected?(axn) do
+      Logger.info("Wake up transition complete")
+      manual_override = Keyword.get(opts, :manual_override, false)
+      wake_reason = if manual_override, do: "ManualWakeUp", else: "ScheduledWakeUp"
+      axn
+        |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
+        |> set_condition("Sleeping", false, wake_reason, "Deployments have been scaled up and ingress restored.")
     end
   end
 
   defp scale_down_deployments(%Bonny.Axn{resource: resource} = axn) do
     Logger.debug("Scaling down deployments...")
     Enum.map(resource["spec"]["deployments"], &scale_deployment(axn, &1, 0))
+    # TODO: Log errors to the Error condition
     axn
   end
 
   defp scale_up_deployments(%Bonny.Axn{resource: resource} =axn) do
     Logger.debug("Scaling up deployments...")
     Enum.map(resource["spec"]["deployments"], &scale_deployment(axn, &1, 1))
+    # TODO: Log errors to the Error condition
     axn
   end
 
@@ -211,6 +249,18 @@ defmodule Drowzee.Controller.SleepScheduleController do
     |> K8s.Client.run()
   end
 
+  defp get_deployments(%Bonny.Axn{resource: resource} = axn) do
+    results = (resource["spec"]["deployments"] || [])
+      |> Stream.map(& &1["name"])
+      |> Stream.map(fn name -> get_deployment(axn, name) end)
+      |> Enum.to_list()
+
+    case Enum.all?(results, fn {:ok, _} -> true; _ -> false end) do
+      true -> {:ok, Enum.map(results, fn {:ok, deployment} -> deployment end)}
+      false -> {:error, "Failed to fetch deployments"}
+    end
+  end
+
   defp get_drowzee_ingress(%Bonny.Axn{conn: conn}) do
     name = "drowzee"
     namespace = Drowzee.K8s.drowzee_namespace()
@@ -237,19 +287,14 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   defp wake_up_ingress(axn) do
     with {:ok, ingress} <- get_ingress(axn),
-         {:ok, updated_ingress} <- Drowzee.Ingress.remove_redirect_annotation(ingress) do
-      case K8s.Client.run(axn.conn, K8s.Client.update(updated_ingress)) do
-        {:ok, _} ->
-          Logger.info("Removed Drowzee redirect from ingress", ingress_name: ingress["metadata"]["name"])
-          # register_event(axn, nil, :Normal, "WakeUpIngress", "Ingress has been restored")
-          axn
-        {:error, error} ->
-          Logger.error("Failed to remove Drowzee redirect from ingress: #{inspect(error)}", ingress_name: ingress["metadata"]["name"])
-          axn
-      end
+         {:ok, updated_ingress} <- Drowzee.Ingress.remove_redirect_annotation(ingress),
+         {:ok, _} <- K8s.Client.run(axn.conn, K8s.Client.update(updated_ingress)) do
+      Logger.info("Removed Drowzee redirect from ingress", ingress_name: ingress["metadata"]["name"])
+      # register_event(axn, nil, :Normal, "WakeUpIngress", "Ingress has been restored")
+      axn
     else
       {:error, error} ->
-        Logger.error("Failed to restore original ingress state: #{inspect(error)}", ingress_name: axn.resource["spec"]["ingressName"])
+        Logger.error("Failed to remove Drowzee redirect from ingress: #{inspect(error)}", ingress_name: axn.resource["spec"]["ingressName"])
         axn
     end
   end

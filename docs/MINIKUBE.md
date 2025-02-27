@@ -25,8 +25,13 @@ helm upgrade --install drowzee drowzee/drowzee \
 
 ## Install Drowzee (using Helm source)
 ```bash
+# Default namespace
 helm upgrade --install drowzee ./chart \
     --namespace default -f local_values.yaml
+
+# Dev namespace
+helm upgrade --install drowzee ./chart \
+    --namespace dev -f local_dev_values.yaml
 ```
 
 ## Install Drowzee (using app source)
