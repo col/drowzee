@@ -13,7 +13,7 @@ defmodule DrowzeeWeb.HomeLive.Index do
   @impl true
   def handle_params(%{"namespace" => namespace, "name" => name}, _url, socket) do
     socket = socket
-      |> assign(:page_title, "Home")
+      |> assign(:page_title, "#{namespace} / #{name}")
       |> assign(:namespace, namespace)
       |> assign(:name, name)
       |> load_sleep_schedules()
@@ -24,7 +24,7 @@ defmodule DrowzeeWeb.HomeLive.Index do
   @impl true
   def handle_params(%{"namespace" => namespace}, _url, socket) do
     socket = socket
-      |> assign(:page_title, "Home")
+      |> assign(:page_title, "#{namespace}")
       |> assign(:namespace, namespace)
       |> assign(:name, nil)
       |> load_sleep_schedules()
@@ -35,7 +35,7 @@ defmodule DrowzeeWeb.HomeLive.Index do
   @impl true
   def handle_params(_params, _url, socket) do
     socket = socket
-      |> assign(:page_title, "Home")
+      |> assign(:page_title, "All Namespaces")
       |> assign(:namespace, nil)
       |> assign(:name, nil)
       |> load_sleep_schedules()

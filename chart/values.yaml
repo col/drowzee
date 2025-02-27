@@ -12,6 +12,12 @@ config:
 secrets:
   secretKeyBase: ""
 
+role:
+  enabled: true
+
+clusterRole:
+  enabled: false
+
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
 

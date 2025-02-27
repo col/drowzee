@@ -1,0 +1,23 @@
+secrets:
+  secretKeyBase: "S2JTslve8ev8XuUEx8jYH8OU3d8BZ7l7WVqo8XpPKFRQkd6TOHSHmbRbOuTOniO+"
+
+config:
+  PORT: "8080"
+  HOST: "0.0.0.0"
+  PHX_SERVER: "true"
+  PHX_HOST: "drowzee.dev.local"
+  BONNY_POD_NAMESPACE: "dev"
+
+image:
+  repository: "drowzee"
+  pullPolicy: IfNotPresent
+  tag: "dev"
+
+ingress:
+  enabled: true
+  hosts:
+    - host: drowzee.dev.local
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []

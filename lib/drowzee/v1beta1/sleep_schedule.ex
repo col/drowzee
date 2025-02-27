@@ -92,6 +92,7 @@ defmodule Drowzee.API.V1Beta1.SleepSchedule do
         %{name: "Timezone", type: :string, description: "Timezone", jsonPath: ".spec.timezone"},
         %{name: "Deployments", type: :string, description: "Deployments", jsonPath: ".spec.deployments[*].name"},
         %{name: "Sleeping?", type: :string, description: "Current Status", jsonPath: ".status.conditions[?(@.type == \"Sleeping\")].status"},
+        %{name: "Transitioning?", type: :string, description: "Status Change In Progress", jsonPath: ".status.conditions[?(@.type == \"Transitioning\")].status"},
         %{name: "ManualOverride?", type: :string, description: "Status overridden by user", jsonPath: ".status.conditions[?(@.type == \"ManualOverride\")].status"}
       ]
     )

@@ -1,6 +1,6 @@
 import Config
 
-config :drowzee, Drowzee.K8sConn, method: :kube_config, context: "orbstack"
+config :drowzee, Drowzee.K8sConn, method: :kube_config, context: "minikube"
 
 # Only required when NOT running in a k8s pod
 # This is used to find the drowzee service when updating deployment ingresses

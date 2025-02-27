@@ -1,8 +1,9 @@
 defmodule Drowzee.K8s do
 
-  def sleep_schedule_list(namespace \\ nil) do
-    operation = K8s.Client.list("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: namespace)
-    K8s.Client.run(conn(), operation)
+  def sleep_schedule_list(namespace \\ Bonny.Config.namespace()) do
+    K8s.Client.list("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: namespace)
+    |> K8s.Client.put_conn(conn())
+    |> K8s.Client.run()
   end
 
   def sleep_schedules(namespace \\ nil) do
@@ -12,9 +13,10 @@ defmodule Drowzee.K8s do
     end
   end
 
-  def get_sleep_schedule(name, namespace \\ nil) do
-    operation = K8s.Client.get("drowzee.challengr.io/v1beta1", "SleepSchedule", name: name, namespace: namespace)
-    K8s.Client.run(conn(), operation)
+  def get_sleep_schedule(name, namespace \\ Bonny.Config.namespace()) do
+    K8s.Client.get("drowzee.challengr.io/v1beta1", "SleepSchedule", name: name, namespace: namespace)
+    |> K8s.Client.put_conn(conn())
+    |> K8s.Client.run()
   end
 
   def get_sleep_schedule!(name, namespace \\ nil) do
