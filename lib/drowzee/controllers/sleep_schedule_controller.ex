@@ -1,11 +1,12 @@
 defmodule Drowzee.Controller.SleepScheduleController do
   @moduledoc """
   Drowzee: SleepScheduleController controller.
-
   """
+
   use Bonny.ControllerV2
   import Drowzee.Axn
   require Logger
+  alias Drowzee.K8s.{SleepSchedule, Ingress, Deployment}
 
   step Bonny.Pluggable.SkipObservedGenerations
   step :handle_event
@@ -20,7 +21,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     |> add_default_conditions()
     |> set_naptime_assigns()
     |> update_state()
-    |> publish_event()
+    |> publish_event() # TODO: Only publish an event when something changes
     |> success_event()
   end
 
@@ -108,11 +109,21 @@ defmodule Drowzee.Controller.SleepScheduleController do
     |> scale_up_deployments()
   end
 
+  defp scale_down_deployments(axn) do
+    SleepSchedule.scale_down_deployments(axn.resource)
+    axn
+  end
+
+  defp scale_up_deployments(axn) do
+    SleepSchedule.scale_up_deployments(axn.resource)
+    axn
+  end
+
   defp update_hosts(axn) do
-    case get_ingress(axn) do
+    case SleepSchedule.get_ingress(axn.resource) do
       {:ok, ingress} ->
         update_status(axn, fn status ->
-          Map.put(status, "hosts", Drowzee.K8s.Ingress.get_hosts(ingress))
+          Map.put(status, "hosts", Ingress.get_hosts(ingress))
         end)
       {:error, error} ->
         Logger.error("Failed to get ingress: #{inspect(error)}")
@@ -128,6 +139,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
       |> put_ingress_to_sleep()
       |> complete_sleep_transition(opts)
     else
+      Logger.debug("Deployments have not yet scaled down...")
       scale_down_deployments(axn)
     end
   end
@@ -140,14 +152,15 @@ defmodule Drowzee.Controller.SleepScheduleController do
       |> wake_up_ingress()
       |> complete_wake_up_transition(opts)
     else
+      Logger.debug("Deployments are not ready...")
       scale_up_deployments(axn)
     end
   end
 
   defp ingress_redirected?(axn) do
-    case get_ingress(axn) do
+    case SleepSchedule.get_ingress(axn.resource) do
       {:ok, ingress} ->
-        Drowzee.Ingress.redirect_annotation?(ingress)
+        Ingress.redirect_annotation?(ingress)
       {:error, error} ->
         Logger.error("Error checking ingress redirect status: #{inspect(error)}")
         false
@@ -167,10 +180,10 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp check_deployment_status?(axn, check_fn) do
-    case get_deployments(axn) do
+    case SleepSchedule.get_deployments(axn.resource) do
       {:ok, deployments} ->
         Enum.all?(deployments, fn deployment ->
-          Logger.debug("Deployment #{deployment["metadata"]["name"]} replicas: #{deployment["status"]["replicas"] || 0}, readyReplicas: #{deployment["status"]["readyReplicas"] || 0}")
+          Logger.debug("Deployment #{Deployment.name(deployment)} replicas: #{Deployment.replicas(deployment)}, readyReplicas: #{Deployment.ready_replicas(deployment)}")
           check_fn.(deployment["status"])
         end)
       {:error, error} ->
@@ -201,100 +214,26 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  defp scale_down_deployments(%Bonny.Axn{resource: resource} = axn) do
-    Logger.debug("Scaling down deployments...")
-    Enum.map(resource["spec"]["deployments"], &scale_deployment(axn, &1, 0))
-    # TODO: Log errors to the Error condition
-    axn
-  end
-
-  defp scale_up_deployments(%Bonny.Axn{resource: resource} =axn) do
-    Logger.debug("Scaling up deployments...")
-    Enum.map(resource["spec"]["deployments"], &scale_deployment(axn, &1, 1))
-    # TODO: Log errors to the Error condition
-    axn
-  end
-
-  defp scale_deployment(%Bonny.Axn{} = axn, deployment, replicas) do
-    Logger.info("Scaling deployment", deployment: deployment["name"], replicas: replicas)
-    case get_deployment(axn, deployment["name"]) do
-      {:ok, deployment} ->
-        deployment = put_in(deployment["spec"]["replicas"], replicas)
-        case K8s.Client.run(axn.conn, K8s.Client.update(deployment)) do
-          {:ok, deployment} -> {:ok, deployment}
-          {:error, reason} ->
-            Logger.error("Failed to scale deployment: #{inspect(reason)}", deployment: deployment["name"], replicas: replicas)
-            {:error, reason}
-        end
-      {:error, reason} ->
-        Logger.error("Failed to find deployment: #{inspect(reason)}", deployment: deployment["name"])
-        {:error, reason}
-    end
-  end
-
-  defp get_ingress(%Bonny.Axn{resource: resource, conn: conn}) do
-    ingress_name = resource["spec"]["ingressName"]
-    namespace = resource["metadata"]["namespace"]
-    Logger.debug("Fetching ingress", ingress_name: ingress_name)
-    K8s.Client.get("networking.k8s.io/v1", :ingress, name: ingress_name, namespace: namespace)
-    |> K8s.Client.put_conn(conn)
-    |> K8s.Client.run()
-  end
-
-  defp get_deployment(%Bonny.Axn{resource: resource, conn: conn}, name) do
-    namespace = resource["metadata"]["namespace"]
-    Logger.debug("Fetching deployment", deployment_name: name)
-    K8s.Client.get("apps/v1", :deployment, name: name, namespace: namespace)
-    |> K8s.Client.put_conn(conn)
-    |> K8s.Client.run()
-  end
-
-  defp get_deployments(%Bonny.Axn{resource: resource} = axn) do
-    results = (resource["spec"]["deployments"] || [])
-      |> Stream.map(& &1["name"])
-      |> Stream.map(fn name -> get_deployment(axn, name) end)
-      |> Enum.to_list()
-
-    case Enum.all?(results, fn {:ok, _} -> true; _ -> false end) do
-      true -> {:ok, Enum.map(results, fn {:ok, deployment} -> deployment end)}
-      false -> {:error, "Failed to fetch deployments"}
-    end
-  end
-
-  defp get_drowzee_ingress(%Bonny.Axn{conn: conn}) do
-    name = "drowzee"
-    namespace = Drowzee.K8s.drowzee_namespace()
-    Logger.debug("Fetching drowzee ingress", ingress_name: name, drowzee_namespace: namespace)
-    K8s.Client.get("networking.k8s.io/v1", :ingress, name: name, namespace: namespace)
-    |> K8s.Client.put_conn(conn)
-    |> K8s.Client.run()
-  end
-
   defp put_ingress_to_sleep(axn) do
-    with {:ok, ingress} <- get_ingress(axn),
-        {:ok, drowzee_ingress} <- get_drowzee_ingress(axn),
-        {:ok, updated_ingress} <- Drowzee.Ingress.add_redirect_annotation(ingress, axn.resource, drowzee_ingress),
-        {:ok, _} <- K8s.Client.run(axn.conn, K8s.Client.update(updated_ingress)) do
-      Logger.info("Updated ingress to redirect to Drowzee", ingress_name: ingress["metadata"]["name"])
-      # register_event(axn, nil, :Normal, "SleepingIngress", "Ingress has been put to sleep")
-      axn
-    else
+    case SleepSchedule.put_ingress_to_sleep(axn.resource) do
+      {:ok, _} ->
+        Logger.info("Updated ingress to redirect to Drowzee", ingress_name: SleepSchedule.ingress_name(axn.resource))
+        # register_event(axn, nil, :Normal, "SleepIngress", "Ingress has been redirected to Drowzee")
+        axn
       {:error, error} ->
-        Logger.error("Failed to redirect ingress to Drowzee: #{inspect(error)}", ingress_name: axn.resource["spec"]["ingressName"])
+        Logger.error("Failed to redirect ingress to Drowzee: #{inspect(error)}", ingress_name: SleepSchedule.ingress_name(axn.resource))
         axn
     end
   end
 
   defp wake_up_ingress(axn) do
-    with {:ok, ingress} <- get_ingress(axn),
-         {:ok, updated_ingress} <- Drowzee.Ingress.remove_redirect_annotation(ingress),
-         {:ok, _} <- K8s.Client.run(axn.conn, K8s.Client.update(updated_ingress)) do
-      Logger.info("Removed Drowzee redirect from ingress", ingress_name: ingress["metadata"]["name"])
-      # register_event(axn, nil, :Normal, "WakeUpIngress", "Ingress has been restored")
-      axn
-    else
+    case SleepSchedule.wake_up_ingress(axn.resource) do
+      {:ok, _} ->
+        Logger.info("Removed Drowzee redirect from ingress", ingress_name: SleepSchedule.ingress_name(axn.resource))
+        # register_event(axn, nil, :Normal, "WakeUpIngress", "Ingress has been restored")
+        axn
       {:error, error} ->
-        Logger.error("Failed to remove Drowzee redirect from ingress: #{inspect(error)}", ingress_name: axn.resource["spec"]["ingressName"])
+        Logger.error("Failed to remove Drowzee redirect from ingress: #{inspect(error)}", ingress_name: SleepSchedule.ingress_name(axn.resource))
         axn
     end
   end

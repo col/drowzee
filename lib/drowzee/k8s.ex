@@ -1,4 +1,5 @@
 defmodule Drowzee.K8s do
+  require Logger
 
   def sleep_schedule_list(namespace \\ Bonny.Config.namespace()) do
     K8s.Client.list("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: namespace)
@@ -61,6 +62,15 @@ defmodule Drowzee.K8s do
     Drowzee.K8sConn.get!()
   end
 
+  def get_drowzee_ingress() do
+    name = "drowzee"
+    namespace = drowzee_namespace()
+    Logger.debug("Fetching drowzee ingress", ingress_name: name, drowzee_namespace: namespace)
+    K8s.Client.get("networking.k8s.io/v1", :ingress, name: name, namespace: namespace)
+    |> K8s.Client.put_conn(conn())
+    |> K8s.Client.run()
+  end
+
   @default_service_account_path "/var/run/secrets/kubernetes.io/serviceaccount"
 
   def drowzee_namespace() do
@@ -69,5 +79,12 @@ defmodule Drowzee.K8s do
       {:ok, namespace} -> namespace
       _ -> Application.get_env(:drowzee, :drowzee_namespace, "default")
     end
+  end
+
+  def get_deployment(name, namespace) do
+    Logger.debug("Fetching deployment", deployment_name: name)
+    K8s.Client.get("apps/v1", :deployment, name: name, namespace: namespace)
+    |> K8s.Client.put_conn(conn())
+    |> K8s.Client.run()
   end
 end

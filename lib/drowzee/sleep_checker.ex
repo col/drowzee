@@ -1,4 +1,6 @@
 defmodule Drowzee.SleepChecker do
+  require Logger
+
   def naptime?(sleep_time, wake_time, timezone) do
     now = DateTime.now!(timezone)
     today_date = DateTime.to_date(now)
@@ -13,6 +15,7 @@ defmodule Drowzee.SleepChecker do
         wake_datetime
       end
 
+    Logger.debug("Sleep time: #{inspect(sleep_datetime)}, Wake time: #{inspect(wake_datetime)}, Now: #{inspect(now)}")
     DateTime.compare(now, sleep_datetime) in [:eq, :gt] and DateTime.compare(now, wake_datetime) == :lt
   end
 
