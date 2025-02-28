@@ -49,8 +49,8 @@ defmodule DrowzeeWeb.HomeLive.Index do
     sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
 
     socket = case Drowzee.K8s.manual_wake_up(sleep_schedule) do
-      {:ok, _sleep_schedule} ->
-        load_sleep_schedules(socket)
+      {:ok, sleep_schedule} ->
+        replace_sleep_schedule(socket, sleep_schedule)
       {:error, error} ->
         socket
         |> load_sleep_schedules()
@@ -65,8 +65,8 @@ defmodule DrowzeeWeb.HomeLive.Index do
     sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
 
     socket = case Drowzee.K8s.manual_sleep(sleep_schedule) do
-      {:ok, _sleep_schedule} ->
-        load_sleep_schedules(socket)
+      {:ok, sleep_schedule} ->
+        replace_sleep_schedule(socket, sleep_schedule)
       {:error, error} ->
         socket
         |> load_sleep_schedules()
@@ -81,8 +81,8 @@ defmodule DrowzeeWeb.HomeLive.Index do
     sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
 
     socket = case Drowzee.K8s.remove_override(sleep_schedule) do
-      {:ok, _sleep_schedule} ->
-        load_sleep_schedules(socket)
+      {:ok, sleep_schedule} ->
+        replace_sleep_schedule(socket, sleep_schedule)
       {:error, error} ->
         socket
         |> load_sleep_schedules()
@@ -129,5 +129,16 @@ defmodule DrowzeeWeb.HomeLive.Index do
       |> Timex.parse!("{ISO:Extended}")
       |> Timex.to_datetime(sleep_schedule["spec"]["timezone"])
       |> Timex.format!("{h12}:{m}{am}")
+  end
+
+  def replace_sleep_schedule(socket, updated_sleep_schedule) do
+    sleep_schedules = Enum.map(socket.assigns.sleep_schedules, fn sleep_schedule ->
+      if sleep_schedule["metadata"]["name"] == updated_sleep_schedule["metadata"]["name"] && sleep_schedule["metadata"]["namespace"] == updated_sleep_schedule["metadata"]["namespace"] do
+        updated_sleep_schedule
+      else
+        sleep_schedule
+      end
+    end)
+    assign(socket, :sleep_schedules, sleep_schedules)
   end
 end
