@@ -13,7 +13,7 @@
   <% else %>
     <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4">
       <.link navigate={~p"/#{@namespace}"}>
-        <%= String.capitalize(@namespace) %>
+        <%= String.capitalize(@namespace) %> Namespace
       </.link>
       <%= if @name != nil do %>
          / <%= String.capitalize(@name) %>
@@ -87,12 +87,12 @@
 
         <%= if get_condition(sleep_schedule, "ManualOverride")["status"] == "True" do %>
           <div class="text-gray-600 mt-2">
-            🛑 <strong>Manual Override:</strong>
+            🛑 <strong>Manual override:</strong>
             <span><%= case get_condition(sleep_schedule, "ManualOverride")["reason"] do
               "Sleep" -> "Put to sleep "
               "WakeUp" -> "Woken up "
               _ -> "Manual override"
-            end %> at <%= last_transaction_time(sleep_schedule, "ManualOverride") %></span>
+            end %> at <%= last_transaction_time(sleep_schedule, "ManualOverride") %> (<%= sleep_schedule["spec"]["timezone"] %>)</span>
             <span>
               <.link
                 phx-click="remove_override"
