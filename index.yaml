@@ -1,0 +1,144 @@
+apiVersion: v1
+entries:
+  drowzee:
+  - apiVersion: v2
+    appVersion: 0.1.13
+    created: "2025-02-28T02:12:46.652066313Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 15e8b628be269018ac4debe9b1a1b7f83fd0cdf76b76797f7d8b61b12baf847f
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.13.tgz
+    version: 0.1.13
+  - apiVersion: v2
+    appVersion: 0.1.12
+    created: "2025-02-28T02:12:46.651571981Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 7ac8248bf3de04da37a77e4abc7018cfb77617579d5e6c1445f56d228518ffbf
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.12.tgz
+    version: 0.1.12
+  - apiVersion: v2
+    appVersion: 0.1.11
+    created: "2025-02-28T02:12:46.651112063Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 3f86ae1f08e1212a18839477532c3e26c0d0bcae685242868d2a07581c3da083
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.11.tgz
+    version: 0.1.11
+  - apiVersion: v2
+    appVersion: 0.1.10
+    created: "2025-02-28T02:12:46.650614445Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 580c8a04538411503bb6a694fe58131fc6db2bb5a12ea53baf44d123120d3cb5
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.10.tgz
+    version: 0.1.10
+  - apiVersion: v2
+    appVersion: 0.1.9
+    created: "2025-02-28T02:12:46.657603973Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 68ccc44cafaf3a6d81212ea99487e7da85f2109b241852b3bce6068d7a15978f
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.9.tgz
+    version: 0.1.9
+  - apiVersion: v2
+    appVersion: 0.1.8
+    created: "2025-02-28T02:12:46.657089464Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 2a00589a20691f56ff38104509c55992634cbfb119643e50f2ec5af60ad81a7f
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.8.tgz
+    version: 0.1.8
+  - apiVersion: v2
+    appVersion: 0.1.7
+    created: "2025-02-28T02:12:46.656584993Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 04624feac7f0c93d85abde39f09109f3b1c6f3221a47abd67f15ffc4ee9c44bf
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.7.tgz
+    version: 0.1.7
+  - apiVersion: v2
+    appVersion: 0.1.6
+    created: "2025-02-28T02:12:46.655725849Z"
+    description: A Helm chart for the Drowzee operator
+    digest: cd4c82afbabcd00e071c3d725a0f36f4694ab52fb10e80346a132a24432e696e
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.6.tgz
+    version: 0.1.6
+  - apiVersion: v2
+    appVersion: 0.1.5
+    created: "2025-02-28T02:12:46.654389216Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 731f535b576c8a89926b8b78a3b24688a998db66a0584f172f09eb1f55110865
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.5.tgz
+    version: 0.1.5
+  - apiVersion: v2
+    appVersion: 0.1.4
+    created: "2025-02-28T02:12:46.653824582Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 76b5c667a97a8c9132d5d65ea6c4513a4e20a9eefbc16fdfbd43126fdcc647f1
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.4.tgz
+    version: 0.1.4
+  - apiVersion: v2
+    appVersion: 0.1.3
+    created: "2025-02-28T02:12:46.653229763Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 5881d4dcf413b40bdd58c15d35a4a1d6cbb2b36c1f97e478937502fc53dd12cc
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.3.tgz
+    version: 0.1.3
+  - apiVersion: v2
+    appVersion: 0.1.2
+    created: "2025-02-28T02:12:46.652609877Z"
+    description: A Helm chart for the Drowzee operator
+    digest: 8fd40e99d69861fe5bec2159290fa673349cc16db48b0b9531879adb42d7f063
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.2.tgz
+    version: 0.1.2
+  - apiVersion: v2
+    appVersion: 0.1.1
+    created: "2025-02-28T02:12:46.65014544Z"
+    description: A Helm chart for the Drowzee operator
+    digest: f2b21fafbcbf66c0ec53a3b808a1d2047650e43c760856d751c137479af63e2f
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.1.tgz
+    version: 0.1.1
+  - apiVersion: v2
+    appVersion: 0.0.3
+    created: "2025-02-28T02:12:46.649693517Z"
+    description: A Helm chart for the Drowzee operator
+    digest: d7cbef5adf8bd20a4acd14917d23f387236626c82e5e20a50cad2e2892da0d85
+    name: drowzee
+    type: application
+    urls:
+    - https://col.github.io/drowzee/drowzee-0.1.0.tgz
+    version: 0.1.0
+generated: "2025-02-28T02:12:46.649090793Z"
