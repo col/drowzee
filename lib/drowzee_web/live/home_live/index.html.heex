@@ -39,9 +39,11 @@
             <.link navigate={~p"/#{sleep_schedule["metadata"]["namespace"]}/#{sleep_schedule["metadata"]["name"]}"}>
               <%= String.capitalize(sleep_schedule["metadata"]["name"]) %>
             </.link>            
-            <.link href={"http://#{sleep_schedule["host"]}"} target="_blank" if={sleep_schedule["host"] != nil}>
-              <.icon name="hero-arrow-top-right-on-square" class="inline-block w-6 h-6 ml-1 mb-2 text-gray-800" />              
-            </.link>
+            <%= if sleep_schedule["host"] != nil do %>
+              <.link href={"http://#{sleep_schedule["host"]}"} target="_blank">
+                <.icon name="hero-arrow-top-right-on-square" class="inline-block w-6 h-6 ml-1 mb-2 text-gray-800" />              
+              </.link>
+            <% end %>
           </h2>
           <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
             <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
@@ -91,6 +93,17 @@
               "WakeUp" -> "Woken up "
               _ -> "Manual override"
             end %> at <%= last_transaction_time(sleep_schedule, "ManualOverride") %></span>
+            <span>
+              <.link
+                phx-click="remove_override"
+                phx-value-name={sleep_schedule["metadata"]["name"]}
+                phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
+                class="px-4 py-2 text-sm text-gray-600 hover:underline disabled:text-gray-300 disabled:cursor-not-allowed"
+                phx-disable-with="removing..."
+              >
+                <span class="inline-block mb-1 w-4 h-4 text-gray-600 hero-trash"></span>
+              </.link>
+            </span>
           </div>
         <% end %>
 

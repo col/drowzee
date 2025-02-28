@@ -26,31 +26,39 @@ defmodule Drowzee.K8s do
   end
 
   def manual_wake_up(sleep_schedule) do
-    sleep_schedule = Drowzee.K8s.SleepSchedule.put_condition(
+    Drowzee.K8s.SleepSchedule.put_condition(
       sleep_schedule,
       "ManualOverride",
       true,
       "WakeUp",
       "Force deployments to wake up"
     )
-    # Make sure we handle the modify event rather then wait for a reconcile
-    |> decrement_observed_generation()
-
-    Bonny.Resource.apply_status(sleep_schedule, conn(), force: true)
+    |> decrement_observed_generation() # Make sure we handle the modify event rather then wait for a reconcile
+    |> Bonny.Resource.apply_status(conn(), force: true)
   end
 
   def manual_sleep(sleep_schedule) do
-    sleep_schedule = Drowzee.K8s.SleepSchedule.put_condition(
+    Drowzee.K8s.SleepSchedule.put_condition(
       sleep_schedule,
       "ManualOverride",
       true,
       "Sleep",
       "Force deployments to sleep"
     )
-    # Make sure we handle the modify event rather then wait for a reconcile
-    |> decrement_observed_generation()
+    |> decrement_observed_generation() # Make sure we handle the modify event rather then wait for a reconcile
+    |> Bonny.Resource.apply_status(conn(), force: true)
+  end
 
-    Bonny.Resource.apply_status(sleep_schedule, conn(), force: true)
+  def remove_override(sleep_schedule) do
+    Drowzee.K8s.SleepSchedule.put_condition(
+      sleep_schedule,
+      "ManualOverride",
+      false,
+      "NoOverride",
+      "No manual override in effect"
+    )
+    |> decrement_observed_generation() # Make sure we handle the modify event rather then wait for a reconcile
+    |> Bonny.Resource.apply_status(conn(), force: true)
   end
 
   def decrement_observed_generation(resource) do

@@ -77,6 +77,22 @@ defmodule DrowzeeWeb.HomeLive.Index do
   end
 
   @impl true
+  def handle_event("remove_override", %{"name" => name, "namespace" => namespace}, socket) do
+    sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
+
+    socket = case Drowzee.K8s.remove_override(sleep_schedule) do
+      {:ok, _sleep_schedule} ->
+        load_sleep_schedules(socket)
+      {:error, error} ->
+        socket
+        |> load_sleep_schedules()
+        |> put_flash(:error, "Failed to sleep #{name}: #{inspect(error)}")
+    end
+
+    {:noreply, socket}
+  end
+
+  @impl true
   @spec handle_info({:sleep_schedule_updated}, map()) :: {:noreply, map()}
   def handle_info({:sleep_schedule_updated}, socket) do
     Logger.debug("LiveView: Received sleep schedule update")
