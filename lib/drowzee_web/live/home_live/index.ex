@@ -1,6 +1,7 @@
 defmodule DrowzeeWeb.HomeLive.Index do
   use DrowzeeWeb, :live_view
 
+  require Logger
   import Drowzee.K8s.SleepSchedule
 
   @impl true
@@ -78,15 +79,25 @@ defmodule DrowzeeWeb.HomeLive.Index do
   @impl true
   @spec handle_info({:sleep_schedule_updated}, map()) :: {:noreply, map()}
   def handle_info({:sleep_schedule_updated}, socket) do
+    Logger.debug("LiveView: Received sleep schedule update")
     {:noreply, load_sleep_schedules(socket)}
   end
 
   defp load_sleep_schedules(socket) do
-    if socket.assigns.name == nil do
-      assign(socket, :sleep_schedules, Drowzee.K8s.sleep_schedules(socket.assigns.namespace))
+    sleep_schedules = if socket.assigns.name == nil do
+      Drowzee.K8s.sleep_schedules(socket.assigns.namespace)
     else
-      assign(socket, :sleep_schedules, [Drowzee.K8s.get_sleep_schedule!(socket.assigns.name, socket.assigns.namespace)])
+      [Drowzee.K8s.get_sleep_schedule!(socket.assigns.name, socket.assigns.namespace)]
     end
+
+    sleep_schedules = Enum.map(sleep_schedules, fn sleep_schedule ->
+      host = case Drowzee.K8s.SleepSchedule.get_ingress(sleep_schedule) do
+        {:ok, ingress} -> Drowzee.K8s.Ingress.get_hosts(ingress) |> List.first()
+        {:error, _error} -> nil
+      end
+      Map.put(sleep_schedule, "host", host)
+    end)
+    assign(socket, :sleep_schedules, sleep_schedules)
   end
 
   def condition_class(sleep_schedule, type) do

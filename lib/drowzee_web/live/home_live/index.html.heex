@@ -38,6 +38,9 @@
             <% end %>
             <.link navigate={~p"/#{sleep_schedule["metadata"]["namespace"]}/#{sleep_schedule["metadata"]["name"]}"}>
               <%= String.capitalize(sleep_schedule["metadata"]["name"]) %>
+            </.link>            
+            <.link href={"http://#{sleep_schedule["host"]}"} target="_blank" if={sleep_schedule["host"] != nil}>
+              <.icon name="hero-arrow-top-right-on-square" class="inline-block w-6 h-6 ml-1 mb-2 text-gray-800" />              
             </.link>
           </h2>
           <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
