@@ -50,6 +50,8 @@ defmodule DrowzeeWeb.HomeLive.Index do
 
     socket = case Drowzee.K8s.manual_wake_up(sleep_schedule) do
       {:ok, sleep_schedule} ->
+        # Note: Bit of a hack to make the UI update immediately rather than waiting for the controller to handle the ManualOverride action
+        sleep_schedule = Drowzee.K8s.SleepSchedule.put_condition(sleep_schedule, "Transitioning", "True", "WakingUp", "Waking up")
         replace_sleep_schedule(socket, sleep_schedule)
       {:error, error} ->
         socket
@@ -66,6 +68,8 @@ defmodule DrowzeeWeb.HomeLive.Index do
 
     socket = case Drowzee.K8s.manual_sleep(sleep_schedule) do
       {:ok, sleep_schedule} ->
+        # Note: Bit of a hack to make the UI update immediately rather than waiting for the controller to handle the ManualOverride action
+        sleep_schedule = Drowzee.K8s.SleepSchedule.put_condition(sleep_schedule, "Transitioning", "True", "Sleeping", "Going to sleep")
         replace_sleep_schedule(socket, sleep_schedule)
       {:error, error} ->
         socket
@@ -136,20 +140,18 @@ defmodule DrowzeeWeb.HomeLive.Index do
   end
 
   defp load_sleep_schedules(socket) do
-    sleep_schedules = if socket.assigns.name == nil do
-      Drowzee.K8s.sleep_schedules(socket.assigns.namespace)
-    else
-      [Drowzee.K8s.get_sleep_schedule!(socket.assigns.name, socket.assigns.namespace)]
+    sleep_schedules = case socket.assigns.name do
+      nil ->
+        Drowzee.K8s.sleep_schedules(socket.assigns.namespace)
+      name ->
+        [Drowzee.K8s.get_sleep_schedule!(name, socket.assigns.namespace)]
     end
 
-    sleep_schedules = Enum.map(sleep_schedules, fn sleep_schedule ->
-      host = case Drowzee.K8s.SleepSchedule.get_ingress(sleep_schedule) do
-        {:ok, ingress} -> Drowzee.K8s.Ingress.get_hosts(ingress) |> List.first()
-        {:error, _error} -> nil
-      end
-      Map.put(sleep_schedule, "host", host)
-    end)
     assign(socket, :sleep_schedules, sleep_schedules)
+  end
+
+  def sleep_schedule_host(sleep_schedule) do
+    sleep_schedule["status"]["hosts"] |> List.first()
   end
 
   def condition_class(sleep_schedule, type) do
