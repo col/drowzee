@@ -8,37 +8,36 @@
     </div>
   </.link>
 
-  <div class="flex justify-between items-center">
+  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
   <%= if @namespace == nil do %>
     <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4">All namespaces</h2>
   <% else %>
-    <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4">
-      <.link navigate={~p"/#{@namespace}"}>
-        <%= String.capitalize(@namespace) %> Namespace
-      </.link>
-      <%= if @name != nil do %>
-         / <%= String.capitalize(@name) %>
-      <% end %>
-    </h2>
-    <span>
-      <.link phx-click="sleep_all_schedules"
-                phx-value-namespace={@namespace}
-                data-confirm={"Are you sure you want to sleep all schedules in the #{@namespace} namespace?"}
-                class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed">
-        <span class="text-lg">😴</span>
-        <span>Sleep All</span>
-      </.link>
-      <span class="mx-2 text-gray-400">/</span>            
-      <.link phx-click="wake_all_schedules"
-                phx-value-namespace={@namespace}
-                data-confirm={"Are you sure you want to wake all schedules in the #{@namespace} namespace?"}
-                class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed">
-        <span class="text-lg">☕️</span>
-        <span>Wake All</span>
-      </.link>
-    </span>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
+      <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4 mb-4 sm:mb-0">
+        <.link navigate={~p"/#{@namespace}"}>
+          <%= String.capitalize(@namespace) %> Namespace
+        </.link>
+        <%= if @name != nil do %>
+           / <%= String.capitalize(@name) %>
+        <% end %>
+      </h2>
+      <div class="flex flex-wrap gap-2 ml-4 mt-2 sm:ml-0">
+        <.link phx-click="sleep_all_schedules"
+               phx-value-namespace={@namespace}
+               data-confirm={"Are you sure you want to sleep all schedules in the #{@namespace} namespace?"}
+               class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed">
+          😴 Sleep All
+        </.link>
+        <.link phx-click="wake_all_schedules"
+               phx-value-namespace={@namespace}
+               data-confirm={"Are you sure you want to wake all schedules in the #{@namespace} namespace?"}
+               class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed">
+          ☕️ Wake All
+        </.link>
+      </div>
+    </div>
   <% end %>
-  </div>
+</div>
 
   <ul class="space-y-8">
     <%= for sleep_schedule <- @sleep_schedules do %>
