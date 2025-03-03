@@ -34,7 +34,10 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp publish_event(axn) do
-    Phoenix.PubSub.broadcast(Drowzee.PubSub, "sleep_schedule:updates", {:sleep_schedule_updated})
+    Task.start(fn ->
+      Process.sleep(500)
+      Phoenix.PubSub.broadcast(Drowzee.PubSub, "sleep_schedule:updates", {:sleep_schedule_updated})
+    end)
     axn
   end
 
@@ -44,6 +47,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     |> set_default_condition("Transitioning", false, "NoTransition", "No transition in progress")
     |> set_default_condition("ManualOverride", false, "NoManualOverride", "No manual override present")
     |> set_default_condition("Error", false, "NoError", "No error present")
+    |> set_default_condition("Heartbeat", false, "StayingAlive", "Triggers events from transition monitor")
   end
 
   defp set_naptime_assigns(%Bonny.Axn{resource: resource} = axn) do
@@ -101,6 +105,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     |> update_hosts()
     |> set_condition("Transitioning", true, "Sleeping", "Going to sleep")
     |> scale_down_deployments()
+    |> start_transition_monitor()
   end
 
   defp initiate_wake_up(axn) do
@@ -108,6 +113,12 @@ defmodule Drowzee.Controller.SleepScheduleController do
     axn
     |> set_condition("Transitioning", true, "WakingUp", "Waking up")
     |> scale_up_deployments()
+    |> start_transition_monitor()
+  end
+
+  defp start_transition_monitor(axn) do
+    Drowzee.TransitionMonitor.start_transition_monitor(axn.resource["metadata"]["name"], axn.resource["metadata"]["namespace"])
+    axn
   end
 
   defp scale_down_deployments(axn) do

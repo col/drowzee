@@ -102,4 +102,18 @@ defmodule Drowzee.K8s.SleepSchedule do
         {:error, error}
     end
   end
+
+  def update_heartbeat(sleep_schedule) do
+    Logger.debug("Update heartbeat...")
+    heartbeat = get_condition(sleep_schedule, "Heartbeat") || %{ "status" => "False" }
+    put_condition(
+      sleep_schedule,
+      "Heartbeat",
+      (if heartbeat["status"] == "True", do: "False", else: "True"),
+      "StayingAlive",
+      "Triggers events from transition monitor"
+    )
+    |> Drowzee.K8s.decrement_observed_generation()
+    |> Bonny.Resource.apply_status(Drowzee.K8s.conn())
+  end
 end

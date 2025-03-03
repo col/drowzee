@@ -12,6 +12,7 @@ defmodule Drowzee.Application do
       {DNSCluster, query: Application.get_env(:drowzee, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: Drowzee.PubSub},
       {Drowzee.Operator, conn: Drowzee.K8sConn.get!(), enable_leader_election: false},
+      Bonny.PeriodicTask,
 
       # Start to serve requests, typically the last entry
       DrowzeeWeb.Endpoint
