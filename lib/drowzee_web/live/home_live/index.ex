@@ -93,6 +93,42 @@ defmodule DrowzeeWeb.HomeLive.Index do
   end
 
   @impl true
+  def handle_event("sleep_all_schedules", %{"namespace" => namespace}, socket) when is_binary(namespace) do
+    sleep_schedules = Drowzee.K8s.sleep_schedules(namespace)
+
+    results = Enum.map(sleep_schedules, fn sleep_schedule ->
+      Drowzee.K8s.manual_sleep(sleep_schedule)
+    end)
+
+    # Wait a second before reloading all the schedules
+    Process.sleep(1000)
+    socket = load_sleep_schedules(socket)
+
+    has_error = Enum.any?(results, fn {:error, _error} -> true; _ -> false end)
+    socket = if has_error, do: put_flash(socket, :error, "Failed to sleep at least one schedule"), else: socket
+
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("wake_all_schedules", %{"namespace" => namespace}, socket) when is_binary(namespace) do
+    sleep_schedules = Drowzee.K8s.sleep_schedules(namespace)
+
+    results = Enum.map(sleep_schedules, fn sleep_schedule ->
+      Drowzee.K8s.manual_wake_up(sleep_schedule)
+    end)
+
+    # Wait a second before reloading all the schedules
+    Process.sleep(1000)
+    socket = load_sleep_schedules(socket)
+
+    has_error = Enum.any?(results, fn {:error, _error} -> true; _ -> false end)
+    socket = if has_error, do: put_flash(socket, :error, "Failed to wake up at least one schedule"), else: socket
+
+    {:noreply, socket}
+  end
+
+  @impl true
   @spec handle_info({:sleep_schedule_updated}, map()) :: {:noreply, map()}
   def handle_info({:sleep_schedule_updated}, socket) do
     Logger.debug("LiveView: Received sleep schedule update")

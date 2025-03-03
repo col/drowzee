@@ -57,6 +57,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     with {:ok, sleeping} <- get_condition(axn, "Sleeping"),
          {:ok, transitioning} <- get_condition(axn, "Transitioning"),
          {:ok, manual_override} <- get_condition(axn, "ManualOverride") do
+
       naptime = if axn.assigns[:naptime], do: :naptime, else: :not_naptime
       sleeping_value = if sleeping["status"] == "True", do: :sleeping, else: :awake
       transitioning_value = if transitioning["status"] == "True", do: :transition, else: :no_transition
