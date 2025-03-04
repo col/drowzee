@@ -14,14 +14,19 @@ defmodule Drowzee.Operator do
   step(Bonny.Pluggable.ApplyStatus)
   step(Bonny.Pluggable.ApplyDescendants)
 
+  require Logger
+
   @impl Bonny.Operator
   def controllers(_wrong_namespace, _opts) do
-    [
+    namespaces = String.split(Bonny.Config.namespace(), ",") |> Enum.map(&String.trim/1)
+    # Note: To watch all namespaces set BONNY_POD_NAMESPACE to "__ALL__"
+    Logger.info("Configuring SleepScheduleController controller with namespace(s): #{Enum.join(namespaces, ", ")}")
+    Enum.map(namespaces, fn namespace ->
       %{
-        query: K8s.Client.watch("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: Bonny.Config.namespace()),
+        query: K8s.Client.watch("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: namespace),
         controller: Drowzee.Controller.SleepScheduleController
       }
-    ]
+    end)
   end
 
   @impl Bonny.Operator

@@ -62,7 +62,7 @@ defmodule Drowzee.K8s do
   end
 
   def decrement_observed_generation(resource) do
-    generation = get_in(resource, [Access.key("status", %{}), "observedGeneration"])
+    generation = get_in(resource, [Access.key("status", %{}), "observedGeneration"]) || 1
     put_in(resource, [Access.key("status", %{}), "observedGeneration"], generation - 1)
   end
 

@@ -67,7 +67,14 @@ helm upgrade --install drowzee ./chart \
 ```bash
 helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo update
-helm upgrade --install podinfo podinfo/podinfo --set ingress.enabled=true
+
+# Deploy to default namespace
+helm upgrade --install podinfo podinfo/podinfo --namespace default -f k8s/podinfo-default-values.yaml
+k apply -f k8s/podinfo-default-sleep.yaml --namespace default
+
+# Deploy to dev namespace
+helm upgrade --install podinfo podinfo/podinfo --namespace dev -f k8s/podinfo-dev-values.yaml
+k apply -f k8s/podinfo-dev-sleep.yaml --namespace dev
 ```
 
 ## Add Host Entries
