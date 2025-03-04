@@ -27,6 +27,7 @@ defmodule Drowzee.K8s.SleepSchedule do
   end
 
   def put_condition(sleep_schedule, type, status, reason \\ nil, message \\ nil) do
+    sleep_schedule = Map.put(sleep_schedule, "status", sleep_schedule["status"] || %{})
     new_conditions = (sleep_schedule["status"]["conditions"] || [])
       |> Enum.filter(&(&1["type"] != type))
       |> List.insert_at(-1, Condition.new(type, status, reason, message))
