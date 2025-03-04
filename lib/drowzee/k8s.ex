@@ -1,7 +1,7 @@
 defmodule Drowzee.K8s do
   require Logger
 
-  def sleep_schedule_list(namespace \\ Bonny.Config.namespace()) do
+  def sleep_schedule_list(namespace \\ nil) do
     K8s.Client.list("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
@@ -14,13 +14,13 @@ defmodule Drowzee.K8s do
     end
   end
 
-  def get_sleep_schedule(name, namespace \\ Bonny.Config.namespace()) do
+  def get_sleep_schedule(name, namespace) do
     K8s.Client.get("drowzee.challengr.io/v1beta1", "SleepSchedule", name: name, namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
   end
 
-  def get_sleep_schedule!(name, namespace \\ nil) do
+  def get_sleep_schedule!(name, namespace) do
     {:ok, sleep_schedule} = get_sleep_schedule(name, namespace)
     sleep_schedule
   end

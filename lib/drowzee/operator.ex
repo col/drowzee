@@ -18,7 +18,7 @@ defmodule Drowzee.Operator do
 
   @impl Bonny.Operator
   def controllers(_wrong_namespace, _opts) do
-    namespaces = String.split(Bonny.Config.namespace(), ",") |> Enum.map(&String.trim/1)
+    namespaces = Drowzee.Config.namespaces()
     # Note: To watch all namespaces set BONNY_POD_NAMESPACE to "__ALL__"
     Logger.info("Configuring SleepScheduleController controller with namespace(s): #{Enum.join(namespaces, ", ")}")
     Enum.map(namespaces, fn namespace ->

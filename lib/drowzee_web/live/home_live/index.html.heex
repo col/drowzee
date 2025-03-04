@@ -21,6 +21,7 @@
            / <%= String.capitalize(@name) %>
         <% end %>
       </h2>
+      <%= if @sleep_schedules != [] do %>
       <div class="flex flex-wrap gap-2 ml-4 mt-2 sm:ml-0">
         <.link phx-click="sleep_all_schedules"
                phx-value-namespace={@namespace}
@@ -35,11 +36,22 @@
           ☕️ Wake All
         </.link>
       </div>
+      <% end %>
     </div>
   <% end %>
 </div>
 
   <ul class="space-y-8">
+    <%= if @sleep_schedules == [] do %>
+      <li class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+        <div class="flex justify-between items-center">
+          <h2 class="text-2xl font-semibold text-gray-800">
+            No sleep schedules found
+          </h2>
+        </div>
+      </li>
+    <% end %>
+
     <%= for sleep_schedule <- @sleep_schedules do %>
       <li class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
         <div class="flex justify-between items-center">

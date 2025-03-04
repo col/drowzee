@@ -10,9 +10,15 @@ defmodule DrowzeeWeb.RedirectController do
       |> Enum.find(fn sleep_schedule -> Enum.any?((sleep_schedule["status"]["hosts"] || []), &(&1 == conn.host)) end)
 
     if sleep_schedule == nil do
-      namespace = Bonny.Config.namespace() |> to_string()
-      Logger.warning("No sleep schedule found for host: #{conn.host}. Redirecting to '/#{namespace}'")
-      redirect(conn, to: "/#{namespace}")
+      Logger.warning("No sleep schedule found for host: #{conn.host}.")
+      if Drowzee.Config.has_cluster_role?() do
+        Logger.warning("Redirecting to '/all'")
+        redirect(conn, to: "/all")
+      else
+        namespace = Drowzee.Config.namespaces() |> List.first() || "default"
+        Logger.warning("Redirecting to '/#{namespace}'")
+        redirect(conn, to: "/#{namespace}")
+      end
     else
       namespace = sleep_schedule["metadata"]["namespace"]
       name = sleep_schedule["metadata"]["name"]
