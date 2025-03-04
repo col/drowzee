@@ -151,7 +151,7 @@ defmodule DrowzeeWeb.HomeLive.Index do
   end
 
   def sleep_schedule_host(sleep_schedule) do
-    sleep_schedule["status"]["hosts"] |> List.first()
+    (sleep_schedule["status"]["hosts"] || []) |> List.first()
   end
 
   def condition_class(sleep_schedule, type) do
