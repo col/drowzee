@@ -8,6 +8,12 @@ defmodule DrowzeeWeb.HomeLive.Index do
   def mount(_params, _session, socket) do
     if connected?(socket), do: Phoenix.PubSub.subscribe(Drowzee.PubSub, "sleep_schedule:updates")
 
+    socket = socket
+      |> assign(:search, "")
+      |> assign(:filtered_sleep_schedules, nil)
+      |> assign(:namespace, nil)
+      |> assign(:name, nil)
+
     {:ok, socket}
   end
 
@@ -27,7 +33,6 @@ defmodule DrowzeeWeb.HomeLive.Index do
     socket = socket
       |> assign(:page_title, "#{namespace}")
       |> assign(:namespace, namespace)
-      |> assign(:name, nil)
       |> load_sleep_schedules()
 
     {:noreply, socket}
@@ -37,8 +42,6 @@ defmodule DrowzeeWeb.HomeLive.Index do
   def handle_params(_params, _url, socket) do
     socket = socket
       |> assign(:page_title, "All Namespaces")
-      |> assign(:namespace, nil)
-      |> assign(:name, nil)
       |> load_sleep_schedules()
 
     {:noreply, socket}
@@ -133,6 +136,40 @@ defmodule DrowzeeWeb.HomeLive.Index do
   end
 
   @impl true
+  def handle_event("search", %{"search" => search}, socket) do
+    socket = socket
+      |> assign(:search, search)
+      |> filter_sleep_schedules(search)
+    {:noreply, socket}
+  end
+
+  @impl true
+  def handle_event("clear_search", _, socket) do
+    socket = socket
+      |> assign(:search, "")
+      |> assign(:filtered_sleep_schedules, nil)
+    {:noreply, socket}
+  end
+
+  defp filter_sleep_schedules(socket, nil) do
+    assign(socket, :filtered_sleep_schedules, [])
+  end
+
+  defp filter_sleep_schedules(socket, "") do
+    assign(socket, :filtered_sleep_schedules, [])
+  end
+
+  defp filter_sleep_schedules(socket, search) do
+    search = String.downcase(search)
+    filtered_sleep_schedules = Enum.filter(socket.assigns.sleep_schedules, fn sleep_schedule ->
+      String.contains?(sleep_schedule["metadata"]["name"], search) ||
+      String.contains?(sleep_schedule["metadata"]["namespace"], search)
+    end)
+
+    assign(socket, :filtered_sleep_schedules, filtered_sleep_schedules)
+  end
+
+  @impl true
   @spec handle_info({:sleep_schedule_updated}, map()) :: {:noreply, map()}
   def handle_info({:sleep_schedule_updated}, socket) do
     Logger.debug("LiveView: Received sleep schedule update")
@@ -147,7 +184,9 @@ defmodule DrowzeeWeb.HomeLive.Index do
         [Drowzee.K8s.get_sleep_schedule!(name, socket.assigns.namespace)]
     end
 
-    assign(socket, :sleep_schedules, sleep_schedules)
+    socket
+    |> assign(:sleep_schedules, sleep_schedules)
+    |> filter_sleep_schedules(socket.assigns.search)
   end
 
   def sleep_schedule_host(sleep_schedule) do

@@ -1,0 +1,10 @@
+apiVersion: drowzee.challengr.io/v1beta1
+kind: SleepSchedule
+metadata:
+  name: mailer
+spec:
+  sleepTime: '10:00pm'
+  wakeTime: '09:00am'
+  timezone: 'Australia/Sydney'
+  deployments:
+    - name: mailer

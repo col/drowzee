@@ -63,7 +63,7 @@ helm upgrade --install drowzee ./chart \
     --namespace default -f local_values.yaml
 ```
 
-## Install an example service
+## Install example services
 ```bash
 helm repo add podinfo https://stefanprodan.github.io/podinfo
 helm repo update
@@ -75,6 +75,17 @@ k apply -f k8s/podinfo-default-sleep.yaml --namespace default
 # Deploy to dev namespace
 helm upgrade --install podinfo podinfo/podinfo --namespace dev -f k8s/podinfo-dev-values.yaml
 k apply -f k8s/podinfo-dev-sleep.yaml --namespace dev
+
+# Multiple mock services
+helm upgrade --install backend podinfo/podinfo --namespace default
+helm upgrade --install mailer podinfo/podinfo --namespace default
+helm upgrade --install worker podinfo/podinfo --namespace default
+helm upgrade --install identity podinfo/podinfo --namespace default
+
+k apply -f k8s/backend-default-sleep.yaml --namespace default
+k apply -f k8s/mailer-default-sleep.yaml --namespace default
+k apply -f k8s/worker-default-sleep.yaml --namespace default
+k apply -f k8s/identity-default-sleep.yaml --namespace default
 ```
 
 ## Add Host Entries

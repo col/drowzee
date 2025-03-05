@@ -1,12 +1,27 @@
-<.flash_group flash={@flash} />
-
 <div class="w-full max-w-3xl mx-auto p-6 space-y-10">
-  <.link navigate={~p"/"}>
-    <div class="flex justify items-center h-auto rounded-xl shadow-lg">    
-      <img src={~p"/images/logo.jpeg"} alt="Logo" class="w-40" />
-      <h1 class="text-4xl font-bold text-gray-800 mt-4">Drowzee</h1>    
+    <div class="flex justify-between items-center h-auto rounded-xl shadow-lg p-4" style="background-color: #F8E892;">    
+      <.link navigate={~p"/"} class="flex items-center">
+        <img src={~p"/images/logo.jpeg"} alt="Logo" class="w-40" />
+        <h1 class="text-4xl font-bold text-gray-800 ml-2">Drowzee</h1>    
+      </.link>
+
+      <.form
+        for={%{}}
+        phx-change="search"
+        phx-submit="search"
+        class="ml-auto mr-2"
+      >
+        <.input
+          type="text"
+          name="search"
+          value={@search}
+          placeholder="Search schedules..."
+          autocomplete="off"
+          phx-debounce="300"
+          class="w-64 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 shadow-sm"
+        />
+      </.form>
     </div>
-  </.link>
 
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
   <%= if @namespace == nil do %>
@@ -52,7 +67,7 @@
       </li>
     <% end %>
 
-    <%= for sleep_schedule <- @sleep_schedules do %>
+    <%= for sleep_schedule <- @filtered_sleep_schedules || @sleep_schedules do %>
       <li class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
         <div class="flex justify-between items-center">
           <h2 class="text-2xl font-semibold text-gray-800">
