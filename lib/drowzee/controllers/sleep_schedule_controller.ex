@@ -149,27 +149,41 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   defp check_sleep_transition(axn, opts) do
     Logger.info("Checking sleep transition...")
-    if all_deployments_asleep?(axn) do
-      Logger.debug("All deployments are asleep")
-      axn
-      |> put_ingress_to_sleep()
-      |> complete_sleep_transition(opts)
-    else
-      Logger.debug("Deployments have not yet scaled down...")
-      scale_down_deployments(axn)
+    case check_deployment_status(axn, &deployment_status_asleep?/1) do
+      {:ok, true} ->
+        Logger.debug("All deployments are asleep")
+        axn
+        |> put_ingress_to_sleep()
+        |> complete_sleep_transition(opts)
+      {:ok, false} ->
+        Logger.debug("Deployments have not yet scaled down...")
+        scale_down_deployments(axn)
+      {:error, [error | _]} ->
+        Logger.error("Failed to check deployment status: #{inspect(error)}")
+        set_condition(axn, "Error", true, "DeploymentNotFound", error.message)
+      {:error, error} ->
+        Logger.error("Failed to check deployment status: #{inspect(error)}")
+        axn
     end
   end
 
   defp check_wake_up_transition(axn, opts) do
     Logger.info("Checking wake up transition...")
-    if all_deployments_ready?(axn) do
-      Logger.debug("All deployments are ready")
-      axn
-      |> wake_up_ingress()
-      |> complete_wake_up_transition(opts)
-    else
-      Logger.debug("Deployments are not ready...")
-      scale_up_deployments(axn)
+    case check_deployment_status(axn, &deployment_status_ready?/1) do
+      {:ok, true} ->
+        Logger.debug("All deployments are ready")
+        axn
+        |> wake_up_ingress()
+        |> complete_wake_up_transition(opts)
+      {:ok, false} ->
+        Logger.debug("Deployments are not ready...")
+        scale_up_deployments(axn)
+      {:error, [error | _]} ->
+        Logger.error("Failed to check deployment status: #{inspect(error)}")
+        set_condition(axn, "Error", true, "DeploymentNotFound", error.message)
+      {:error, error} ->
+        Logger.error("Failed to check deployment status: #{inspect(error)}")
+        axn
     end
   end
 
@@ -186,28 +200,24 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  defp all_deployments_asleep?(axn) do
-    check_deployment_status?(axn, fn (status) ->
-      Map.get(status, "replicas", 0) == 0 && Map.get(status, "readyReplicas", 0) == 0
-    end)
+  defp deployment_status_ready?(status) do
+    status["replicas"] != nil && status["readyReplicas"] != nil && status["replicas"] == status["readyReplicas"]
   end
 
-  defp all_deployments_ready?(axn) do
-    check_deployment_status?(axn, fn (status) ->
-      status["replicas"] != nil && status["readyReplicas"] != nil && status["replicas"] == status["readyReplicas"]
-    end)
+  defp deployment_status_asleep?(status) do
+    Map.get(status, "replicas", 0) == 0 && Map.get(status, "readyReplicas", 0) == 0
   end
 
-  defp check_deployment_status?(axn, check_fn) do
+  defp check_deployment_status(axn, check_fn) do
     case SleepSchedule.get_deployments(axn.resource) do
       {:ok, deployments} ->
-        Enum.all?(deployments, fn deployment ->
+        result = Enum.all?(deployments, fn deployment ->
           Logger.debug("Deployment #{Deployment.name(deployment)} replicas: #{Deployment.replicas(deployment)}, readyReplicas: #{Deployment.ready_replicas(deployment)}")
           check_fn.(deployment["status"])
         end)
+        {:ok, result}
       {:error, error} ->
-        Logger.error("Error checking deployments: #{inspect(error)}")
-        false
+        {:error, error}
     end
   end
 

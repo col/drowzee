@@ -59,7 +59,7 @@ defmodule Drowzee.K8s.SleepSchedule do
 
     case Enum.all?(results, fn {:ok, _} -> true; _ -> false end) do
       true -> {:ok, Enum.map(results, fn {:ok, deployment} -> deployment end)}
-      false -> {:error, "Failed to fetch deployments"}
+      false -> {:error, Enum.filter(results, fn {:error, _} -> true; _ -> false end) |> Enum.map(fn {:error, error} -> error end)}
     end
   end
 
