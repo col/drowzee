@@ -137,6 +137,10 @@ defmodule Drowzee.Controller.SleepScheduleController do
         update_status(axn, fn status ->
           Map.put(status, "hosts", Ingress.get_hosts(ingress))
         end)
+      {:error, :ingress_name_not_set} ->
+        update_status(axn, fn status ->
+          Map.put(status, "hosts", [])
+        end)
       {:error, error} ->
         Logger.error("Failed to get ingress: #{inspect(error)}")
         axn
@@ -173,6 +177,9 @@ defmodule Drowzee.Controller.SleepScheduleController do
     case SleepSchedule.get_ingress(axn.resource) do
       {:ok, ingress} ->
         Ingress.redirect_annotation?(ingress)
+      {:error, :ingress_name_not_set} ->
+        # NOTE: No ingress has been provided so there is nothing to redirect
+        true
       {:error, error} ->
         Logger.error("Error checking ingress redirect status: #{inspect(error)}")
         false
@@ -232,6 +239,9 @@ defmodule Drowzee.Controller.SleepScheduleController do
         Logger.info("Updated ingress to redirect to Drowzee", ingress_name: SleepSchedule.ingress_name(axn.resource))
         # register_event(axn, nil, :Normal, "SleepIngress", "Ingress has been redirected to Drowzee")
         axn
+      {:error, :ingress_name_not_set} ->
+        Logger.info("No ingressName has been provided so there is nothing to redirect")
+        axn
       {:error, error} ->
         Logger.error("Failed to redirect ingress to Drowzee: #{inspect(error)}", ingress_name: SleepSchedule.ingress_name(axn.resource))
         axn
@@ -243,6 +253,9 @@ defmodule Drowzee.Controller.SleepScheduleController do
       {:ok, _} ->
         Logger.info("Removed Drowzee redirect from ingress", ingress_name: SleepSchedule.ingress_name(axn.resource))
         # register_event(axn, nil, :Normal, "WakeUpIngress", "Ingress has been restored")
+        axn
+      {:error, :ingress_name_not_set} ->
+        Logger.info("No ingressName has been provided so there is nothing to restore")
         axn
       {:error, error} ->
         Logger.error("Failed to remove Drowzee redirect from ingress: #{inspect(error)}", ingress_name: SleepSchedule.ingress_name(axn.resource))

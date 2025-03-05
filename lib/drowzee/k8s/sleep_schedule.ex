@@ -39,12 +39,16 @@ defmodule Drowzee.K8s.SleepSchedule do
   end
 
   def get_ingress(sleep_schedule) do
-    ingress_name = ingress_name(sleep_schedule)
-    namespace = namespace(sleep_schedule)
-    Logger.debug("Fetching ingress", ingress_name: ingress_name)
-    K8s.Client.get("networking.k8s.io/v1", :ingress, name: ingress_name, namespace: namespace)
-    |> K8s.Client.put_conn(Drowzee.K8s.conn())
-    |> K8s.Client.run()
+    case ingress_name(sleep_schedule) do
+      nil -> {:error, :ingress_name_not_set}
+      "" -> {:error, :ingress_name_not_set}
+      ingress_name ->
+        namespace = namespace(sleep_schedule)
+        Logger.debug("Fetching ingress", ingress_name: ingress_name)
+        K8s.Client.get("networking.k8s.io/v1", :ingress, name: ingress_name, namespace: namespace)
+        |> K8s.Client.put_conn(Drowzee.K8s.conn())
+        |> K8s.Client.run()
+    end
   end
 
   def get_deployments(sleep_schedule) do

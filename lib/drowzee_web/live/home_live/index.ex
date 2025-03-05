@@ -152,11 +152,11 @@ defmodule DrowzeeWeb.HomeLive.Index do
   end
 
   defp filter_sleep_schedules(socket, nil) do
-    assign(socket, :filtered_sleep_schedules, [])
+    assign(socket, :filtered_sleep_schedules, nil)
   end
 
   defp filter_sleep_schedules(socket, "") do
-    assign(socket, :filtered_sleep_schedules, [])
+    assign(socket, :filtered_sleep_schedules, nil)
   end
 
   defp filter_sleep_schedules(socket, search) do
