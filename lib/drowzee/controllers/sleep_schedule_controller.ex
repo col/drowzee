@@ -54,7 +54,13 @@ defmodule Drowzee.Controller.SleepScheduleController do
     sleep_time = resource["spec"]["sleepTime"]
     wake_time = resource["spec"]["wakeTime"]
     timezone = resource["spec"]["timezone"]
-    %{axn | assigns: Map.put(axn.assigns, :naptime, Drowzee.SleepChecker.naptime?(sleep_time, wake_time, timezone))}
+    case Drowzee.SleepChecker.naptime?(sleep_time, wake_time, timezone) do
+      {:ok, naptime} ->
+        %{axn | assigns: Map.put(axn.assigns, :naptime, naptime)}
+      {:error, reason} ->
+        Logger.error("Error checking naptime: #{reason}")
+        set_condition(axn, "Error", true, "InvalidSleepSchedule", "Invalid sleep schedule: #{reason}")
+    end
   end
 
   defp update_state(%Bonny.Axn{} = axn) do
@@ -222,25 +228,23 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp complete_sleep_transition(axn, opts) do
-    if ingress_redirected?(axn) do
-      Logger.info("Sleep transition complete")
-      manual_override = Keyword.get(opts, :manual_override, false)
-      sleep_reason = if manual_override, do: "ManualSleep", else: "ScheduledSleep"
-      axn
-        |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
-        |> set_condition("Sleeping", true, sleep_reason, "Deployments have been scaled down and ingress redirected.")
-    end
+    Logger.info("Sleep transition complete")
+    manual_override = Keyword.get(opts, :manual_override, false)
+    sleep_reason = if manual_override, do: "ManualSleep", else: "ScheduledSleep"
+    axn
+      |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
+      |> set_condition("Sleeping", true, sleep_reason, "Deployments have been scaled down and ingress redirected.")
+      |> set_condition("Error", false, "None", "No error")
   end
 
   defp complete_wake_up_transition(axn, opts) do
-    if !ingress_redirected?(axn) do
-      Logger.info("Wake up transition complete")
-      manual_override = Keyword.get(opts, :manual_override, false)
-      wake_reason = if manual_override, do: "ManualWakeUp", else: "ScheduledWakeUp"
-      axn
-        |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
-        |> set_condition("Sleeping", false, wake_reason, "Deployments have been scaled up and ingress restored.")
-    end
+    Logger.info("Wake up transition complete")
+    manual_override = Keyword.get(opts, :manual_override, false)
+    wake_reason = if manual_override, do: "ManualWakeUp", else: "ScheduledWakeUp"
+    axn
+      |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
+      |> set_condition("Sleeping", false, wake_reason, "Deployments have been scaled up and ingress restored.")
+      |> set_condition("Error", false, "None", "No error")
   end
 
   defp put_ingress_to_sleep(axn) do
