@@ -1,4 +1,4 @@
-{{- if .Values.clusterRole.enabled -}}
+{{- if eq .Values.mode "cluster" -}}
 metadata:
   name: drowzee
   labels:

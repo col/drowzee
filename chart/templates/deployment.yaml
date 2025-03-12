@@ -56,6 +56,20 @@ spec:
               name: {{ $fullName }}
           - secretRef:
               name: {{ $fullName }}
+          env:
+            - name: "PORT"
+              value: {{ default .Values.config.port "8080" }}
+            - name: "PHX_SERVER"
+              value: {{ default .Values.config.server "true" }}
+            - name: "PHX_HOST"
+              value: {{ default .Values.config.host "drowzee.local" }}
+            {{- if eq .Values.mode "cluster" -}}
+            - name: "BONNY_POD_NAMESPACE"
+              value: {{ default .Values.config.namespaces "default" }}
+            {{- else -}}
+            - name: "BONNY_POD_NAMESPACE"
+              value: {{ .Release.Namespace }}
+            {{- end }}
       {{- with .Values.volumes }}
       volumes:
         {{- toYaml . | nindent 8 }}

@@ -1,4 +1,4 @@
-{{- if .Values.role.enabled -}}
+{{- if eq .Values.mode "single_namespace" -}}
 metadata:
   name: drowzee
   labels:

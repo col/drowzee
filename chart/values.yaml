@@ -2,21 +2,22 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-config:
-  PORT: "8080"
-  HOST: "0.0.0.0"
-  PHX_SERVER: "true"
-  PHX_HOST: "drowzee.local"
-  BONNY_POD_NAMESPACE: "default"
+# Can either be `single_namespace` to manage the Drowzee release namespace or `cluster` to manage multiple namespaces
+mode: "single_namespace"
+
+app:  
+  # The host name for the application
+  host: "drowzee.local"
+  # A comma separated list of namespaces to manage (only required in cluster mode)
+  # namespaces: "default,dev,qa" 
+
+# Optional environment variables (not required)
+config: []
 
 secrets:
+  # Required - A random string used for signing and encrypting session data and cookies. 
+  # Can be generated with `openssl rand -hex 64`
   secretKeyBase: ""
-
-role:
-  enabled: true
-
-clusterRole:
-  enabled: false
 
 # This will set the replicaset count more information can be found here: https://kubernetes.io/docs/concepts/workloads/controllers/replicaset/
 replicaCount: 1
