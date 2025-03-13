@@ -9,6 +9,7 @@ app:
   # The host name for the application
   host: "drowzee.local"
   # A comma separated list of namespaces to manage (only required in cluster mode)
+  # Use `__ALL__` to manage all namespaces
   # namespaces: "default,dev,qa" 
 
 # Optional environment variables (not required)

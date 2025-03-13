@@ -8,7 +8,7 @@ Drowzee is a K8s operator to put deployments to sleep (scaled down), and wake th
 
 Drowzee comes with a web interface that allows you to view sleep schedules, their current status and even manually override the schedule to wake up deployments when required. 
 
-Drowzee also supports redirecting the ingress record of a sleeping deployment to drowzee and so that users can easily manage the deployment and the sleep schedule from the same interface.
+Drowzee also supports redirecting the ingress record of a sleeping deployment to drowzee so that users can easily manage the deployment and the sleep schedule from the same interface.
 
 
 ### Installation / Upgrade
@@ -57,6 +57,7 @@ mode: cluster
 
 app:
   host: "drowzee.nonprod.example.com"
+  # Use `__ALL__` to manage all namespaces
   namespaces: "dev,qa,staging"
 
 secrets:
