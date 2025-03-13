@@ -58,14 +58,14 @@ spec:
               name: {{ $fullName }}
           env:
             - name: "PORT"
-              value: {{ default .Values.config.port "8080" }}
+              value: {{ default .Values.app.port "8080" }}
             - name: "PHX_SERVER"
-              value: {{ default .Values.config.server "true" }}
+              value: {{ default .Values.app.server "true" }}
             - name: "PHX_HOST"
-              value: {{ default .Values.config.host "drowzee.local" }}
+              value: {{ default .Values.app.host "drowzee.local" }}
             {{- if eq .Values.mode "cluster" -}}
             - name: "BONNY_POD_NAMESPACE"
-              value: {{ default .Values.config.namespaces "default" }}
+              value: {{ default .Values.app.namespaces "default" }}
             {{- else -}}
             - name: "BONNY_POD_NAMESPACE"
               value: {{ .Release.Namespace }}
