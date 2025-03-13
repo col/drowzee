@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drowzee - Kubernetes Sleep Scheduler</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">
+                    <img src="/images/logo.png" alt="Drowzee Logo">
+                </div>
+                <ul class="nav-links">
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#installation">Installation</a></li>
+                    <li><a href="#configuration">Configuration</a></li>
+                    <li><a href="#about">About</a></li>
+                </ul>
+                <div class="github-link">
+                    <a href="https://github.com/col/drowzee" target="_blank" class="btn btn-github">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                </div>
+            </nav>
+            <div class="hero">
+                <div class="hero-content">
+                    <h1>Put Your Kubernetes Deployments to Sleep</h1>
+                    <p>Drowzee is a Kubernetes operator that automatically scales down deployments according to a schedule and wakes them up when needed.</p>
+                    <div class="cta-buttons">
+                        <a href="#installation" class="btn btn-primary">Get Started</a>
+                        <a href="https://github.com/col/drowzee" target="_blank" class="btn btn-secondary">View on GitHub</a>
+                    </div>
+                </div>
+                <div class="hero-image">
+                    <img src="/images/logo.png" alt="Drowzee Illustration">
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2>Why Choose Drowzee?</h2>
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-moon"></i>
+                    </div>
+                    <h3>Scheduled Scaling</h3>
+                    <p>Automatically scale down deployments during off-hours and scale them back up when needed, saving valuable cluster resources.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <h3>Web Interface</h3>
+                    <p>Manage sleep schedules, view their status, and manually override schedules through an intuitive web interface.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-route"></i>
+                    </div>
+                    <h3>Ingress Redirection</h3>
+                    <p>Redirect traffic from sleeping deployments to Drowzee, allowing users to wake up services on demand.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <h3>Flexible Deployment</h3>
+                    <p>Run in single namespace mode or cluster mode to manage deployments across multiple namespaces.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="installation" class="installation">
+        <div class="container">
+            <h2>Installation</h2>
+            <div class="installation-content">
+                <div class="installation-steps">
+                    <p>Install Drowzee using Helm:</p>
+                    <div class="code-block">
+                        <pre><code>helm repo add drowzee https://col.github.io/drowzee
+helm repo update
+helm upgrade --install drowzee drowzee/drowzee --namespace default -f values.yaml</code></pre>
+                        <button class="copy-btn" onclick="copyToClipboard(this)">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                    <p>To uninstall:</p>
+                    <div class="code-block">
+                        <pre><code>helm uninstall drowzee</code></pre>
+                        <button class="copy-btn" onclick="copyToClipboard(this)">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="configuration" class="configuration">
+        <div class="container">
+            <h2>Configuration</h2>
+            <div class="config-tabs">
+                <div class="tab-buttons">
+                    <button class="tab-btn active" onclick="openTab(event, 'single-namespace')">Single Namespace</button>
+                    <button class="tab-btn" onclick="openTab(event, 'cluster-mode')">Cluster Mode</button>
+                    <button class="tab-btn" onclick="openTab(event, 'resources')">Resources</button>
+                </div>
+                <div id="single-namespace" class="tab-content active">
+                    <p>In single namespace mode, Drowzee will only detect sleep schedules and manage deployments in the same namespace as the Drowzee deployment.</p>
+                    <div class="code-block">
+                        <pre><code>mode: single_namespace
+
+app:
+  host: "drowzee.dev.example.com"
+
+secrets:
+  secretKeyBase: "random-secret-key"
+
+# Optional but required in order to access the Drowzee Web UI
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+  hosts:
+    - host: drowzee.dev.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific</code></pre>
+                        <button class="copy-btn" onclick="copyToClipboard(this)">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="cluster-mode" class="tab-content">
+                    <p>In cluster mode, Drowzee will detect sleep schedules and manage deployments in multiple namespaces.</p>
+                    <div class="code-block">
+                        <pre><code>mode: cluster
+
+app:
+  host: "drowzee.nonprod.example.com"
+  # Use `__ALL__` to manage all namespaces
+  namespaces: "dev,qa,staging"
+
+secrets:
+  secretKeyBase: "random-secret-key"
+
+# Optional but required in order to access the Drowzee Web UI
+ingress:
+  enabled: true
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+  hosts:
+    - host: drowzee.nonprod.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific</code></pre>
+                        <button class="copy-btn" onclick="copyToClipboard(this)">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="resources" class="tab-content">
+                    <p>Drowzee is reasonably lightweight but resource requirements depend on the number of sleep schedules and deployments being managed. Here's a safe starting point:</p>
+                    <div class="code-block">
+                        <pre><code>resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi</code></pre>
+                        <button class="copy-btn" onclick="copyToClipboard(this)">
+                            <i class="far fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="about">
+        <div class="container">
+            <h2>About Drowzee</h2>
+            <div class="about-content">
+                <p>Drowzee was inspired by <a href="https://github.com/moonbeam-nyc/snorlax" target="_blank">Snorlax</a>, with several improvements:</p>
+                <ul>
+                    <li><strong>Simpler Ingress Management:</strong> Uses a single annotation to redirect traffic rather than rewriting the whole ingress record.</li>
+                    <li><strong>Explicit Wake Up:</strong> Requires users to click the wake-up button, avoiding unexpected wakeups.</li>
+                    <li><strong>Feature-rich UI:</strong> Provides a comprehensive web interface to view and manage sleep schedules.</li>
+                </ul>
+                <p>Built with the <a href="https://github.com/coryodaniel/bonny" target="_blank">Bonny framework</a> for creating Kubernetes operators in Elixir.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <img src="/images/logo.png" alt="Drowzee Logo">
+                    <p>© 2025 Drowzee. Open Source Project.</p>
+                </div>
+                <div class="footer-links">
+                    <ul>
+                        <li><a href="https://github.com/col/drowzee" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+                        <li><a href="https://github.com/col/drowzee/issues" target="_blank"><i class="fas fa-bug"></i> Report Issues</a></li>
+                        <li><a href="https://github.com/col/drowzee/blob/main/LICENSE" target="_blank"><i class="fas fa-gavel"></i> License</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
