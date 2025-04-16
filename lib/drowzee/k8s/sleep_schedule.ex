@@ -1,4 +1,6 @@
 defmodule Drowzee.K8s.SleepSchedule do
+  use Retry.Annotation
+
   require Logger
 
   alias Drowzee.K8s.{Deployment, Ingress, Condition}
@@ -51,6 +53,7 @@ defmodule Drowzee.K8s.SleepSchedule do
     end
   end
 
+  @retry with: exponential_backoff(1000) |> Stream.take(2)
   def get_deployments(sleep_schedule) do
     namespace = namespace(sleep_schedule)
     results = (deployment_names(sleep_schedule) || [])

@@ -8,6 +8,7 @@ defmodule Drowzee.MixProject do
       elixir: "~> 1.14",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
+      consolidate_protocols: Mix.env() != :dev,
       aliases: aliases(),
       deps: deps()
     ]
@@ -19,7 +20,7 @@ defmodule Drowzee.MixProject do
   def application do
     [
       mod: {Drowzee.Application, []},
-      extra_applications: [:logger, :runtime_tools]
+      extra_applications: [:logger, :runtime_tools, :retry]
     ]
   end
 
@@ -32,6 +33,8 @@ defmodule Drowzee.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
+      {:retry, "~> 0.19"},
+      {:igniter, "~> 0.5", only: [:dev, :test]},
       {:phoenix, "~> 1.7.19"},
       {:phoenix_html, "~> 4.1"},
       {:phoenix_live_reload, "~> 1.2", only: :dev},
