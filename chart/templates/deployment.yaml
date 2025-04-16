@@ -63,10 +63,10 @@ spec:
               value: {{ default .Values.app.server "true" }}
             - name: "PHX_HOST"
               value: {{ default .Values.app.host "drowzee.local" }}
-            {{- if eq .Values.mode "cluster" -}}
+            {{- if eq .Values.mode "cluster" }}
             - name: "BONNY_POD_NAMESPACE"
               value: {{ default .Values.app.namespaces "default" }}
-            {{- else -}}
+            {{- else }}
             - name: "BONNY_POD_NAMESPACE"
               value: {{ .Release.Namespace }}
             {{- end }}
