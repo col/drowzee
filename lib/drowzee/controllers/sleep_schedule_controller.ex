@@ -193,19 +193,6 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  defp ingress_redirected?(axn) do
-    case SleepSchedule.get_ingress(axn.resource) do
-      {:ok, ingress} ->
-        Ingress.redirect_annotation?(ingress)
-      {:error, :ingress_name_not_set} ->
-        # NOTE: No ingress has been provided so there is nothing to redirect
-        true
-      {:error, error} ->
-        Logger.error("Error checking ingress redirect status: #{inspect(error)}")
-        false
-    end
-  end
-
   defp deployment_status_ready?(status) do
     status["replicas"] != nil && status["readyReplicas"] != nil && status["replicas"] == status["readyReplicas"]
   end
