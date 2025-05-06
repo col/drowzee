@@ -95,4 +95,18 @@ defmodule Drowzee.K8s do
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
   end
+
+  def get_stateful_set(name, namespace) do
+    Logger.debug("Fetching stateful set", stateful_set_name: name)
+    K8s.Client.get("apps/v1", :statefulset, name: name, namespace: namespace)
+    |> K8s.Client.put_conn(conn())
+    |> K8s.Client.run()
+  end
+
+  def get_cron_job(name, namespace) do
+    Logger.debug("Fetching cron job", cron_job_name: name)
+    K8s.Client.get("batch/v1", :cronjob, name: name, namespace: namespace)
+    |> K8s.Client.put_conn(conn())
+    |> K8s.Client.run()
+  end
 end

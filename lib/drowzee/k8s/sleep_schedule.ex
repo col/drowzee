@@ -3,7 +3,7 @@ defmodule Drowzee.K8s.SleepSchedule do
 
   require Logger
 
-  alias Drowzee.K8s.{Deployment, Ingress, Condition}
+  alias Drowzee.K8s.{Deployment, StatefulSet, CronJob, Ingress, Condition}
 
   def name(sleep_schedule) do
     sleep_schedule["metadata"]["name"]
@@ -15,6 +15,16 @@ defmodule Drowzee.K8s.SleepSchedule do
 
   def deployment_names(sleep_schedule) do
     (sleep_schedule["spec"]["deployments"] || [])
+    |> Enum.map(& &1["name"])
+  end
+
+  def stateful_set_names(sleep_schedule) do
+    (sleep_schedule["spec"]["statefulSets"] || [])
+    |> Enum.map(& &1["name"])
+  end
+
+  def cron_job_names(sleep_schedule) do
+    (sleep_schedule["spec"]["cronJobs"] || [])
     |> Enum.map(& &1["name"])
   end
 
@@ -66,6 +76,32 @@ defmodule Drowzee.K8s.SleepSchedule do
     end
   end
 
+  @retry with: exponential_backoff(1000) |> Stream.take(2)
+  def get_stateful_sets(sleep_schedule) do
+    namespace = namespace(sleep_schedule)
+    results = (stateful_set_names(sleep_schedule) || [])
+      |> Stream.map(&Drowzee.K8s.get_stateful_set(&1, namespace))
+      |> Enum.to_list()
+
+    case Enum.all?(results, fn {:ok, _} -> true; _ -> false end) do
+      true -> {:ok, Enum.map(results, fn {:ok, stateful_set} -> stateful_set end)}
+      false -> {:error, Enum.filter(results, fn {:error, _} -> true; _ -> false end) |> Enum.map(fn {:error, error} -> error end)}
+    end
+  end
+
+  @retry with: exponential_backoff(1000) |> Stream.take(2)
+  def get_cron_jobs(sleep_schedule) do
+    namespace = namespace(sleep_schedule)
+    results = (cron_job_names(sleep_schedule) || [])
+      |> Stream.map(&Drowzee.K8s.get_cron_job(&1, namespace))
+      |> Enum.to_list()
+
+    case Enum.all?(results, fn {:ok, _} -> true; _ -> false end) do
+      true -> {:ok, Enum.map(results, fn {:ok, cron_job} -> cron_job end)}
+      false -> {:error, Enum.filter(results, fn {:error, _} -> true; _ -> false end) |> Enum.map(fn {:error, error} -> error end)}
+    end
+  end
+
   def scale_down_deployments(sleep_schedule) do
     Logger.debug("Scaling down deployments...")
     case get_deployments(sleep_schedule) do
@@ -77,11 +113,55 @@ defmodule Drowzee.K8s.SleepSchedule do
     end
   end
 
+  def scale_down_stateful_sets(sleep_schedule) do
+    Logger.debug("Scaling down stateful sets...")
+    case get_stateful_sets(sleep_schedule) do
+      {:ok, stateful_sets} ->
+        results = Enum.map(stateful_sets, &StatefulSet.scale_stateful_set(&1, 0))
+        {:ok, results}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def suspend_cron_jobs(sleep_schedule) do
+    Logger.debug("Suspending cron jobs...")
+    case get_cron_jobs(sleep_schedule) do
+      {:ok, cron_jobs} ->
+        results = Enum.map(cron_jobs, &CronJob.suspend_cron_job(&1, true))
+        {:ok, results}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
   def scale_up_deployments(sleep_schedule) do
     Logger.debug("Scaling up deployments...")
     case get_deployments(sleep_schedule) do
       {:ok, deployments} ->
         results = Enum.map(deployments, &Deployment.scale_deployment(&1, 1))
+        {:ok, results}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def scale_up_stateful_sets(sleep_schedule) do
+    Logger.debug("Scaling up stateful sets...")
+    case get_stateful_sets(sleep_schedule) do
+      {:ok, stateful_sets} ->
+        results = Enum.map(stateful_sets, &StatefulSet.scale_stateful_set(&1, 1))
+        {:ok, results}
+      {:error, error} ->
+        {:error, error}
+    end
+  end
+
+  def resume_cron_jobs(sleep_schedule) do
+    Logger.debug("Resuming cron jobs...")
+    case get_cron_jobs(sleep_schedule) do
+      {:ok, cron_jobs} ->
+        results = Enum.map(cron_jobs, &CronJob.suspend_cron_job(&1, false))
         {:ok, results}
       {:error, error} ->
         {:error, error}

@@ -53,11 +53,30 @@ spec:
                 - sleepTime
                 - timezone
                 - wakeTime
-                - deployments
               properties:
                 deployments:
                   type: array
                   description: The deployments that will be slept/woken.
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                statefulSets:
+                  type: array
+                  description: The stateful sets that will be slept/woken.
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                cronJobs:
+                  type: array
+                  description: The cron jobs that will be suspended/resumed.
                   items:
                     type: object
                     required:
@@ -95,6 +114,14 @@ spec:
           type: string
           description: Deployments
           jsonPath: .spec.deployments[*].name
+        - name: StatefulSets
+          type: string
+          description: StatefulSets
+          jsonPath: .spec.statefulSets[*].name
+        - name: CronJobs
+          type: string
+          description: CronJobs
+          jsonPath: .spec.cronJobs[*].name
         - name: Sleeping?
           type: string
           description: Current Status

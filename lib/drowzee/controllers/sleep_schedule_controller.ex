@@ -6,7 +6,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
   use Bonny.ControllerV2
   import Drowzee.Axn
   require Logger
-  alias Drowzee.K8s.{SleepSchedule, Ingress, Deployment}
+  alias Drowzee.K8s.{SleepSchedule, Ingress, Deployment, StatefulSet, CronJob}
 
   step Bonny.Pluggable.SkipObservedGenerations
   step :handle_event
@@ -129,11 +129,15 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   defp scale_down_deployments(axn) do
     SleepSchedule.scale_down_deployments(axn.resource)
+    SleepSchedule.scale_down_stateful_sets(axn.resource)
+    SleepSchedule.suspend_cron_jobs(axn.resource)
     axn
   end
 
   defp scale_up_deployments(axn) do
     SleepSchedule.scale_up_deployments(axn.resource)
+    SleepSchedule.scale_up_stateful_sets(axn.resource)
+    SleepSchedule.resume_cron_jobs(axn.resource)
     axn
   end
 
@@ -194,23 +198,66 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp deployment_status_ready?(status) do
-    status["replicas"] != nil && status["readyReplicas"] != nil && status["replicas"] == status["readyReplicas"]
+    # For deployments and stateful sets
+    if Map.has_key?(status, "replicas") do
+      status["replicas"] != nil && status["readyReplicas"] != nil && status["replicas"] == status["readyReplicas"]
+    # For cron jobs
+    else
+      Map.get(status, "suspended", true) == false
+    end
   end
 
   defp deployment_status_asleep?(status) do
-    Map.get(status, "replicas", 0) == 0 && Map.get(status, "readyReplicas", 0) == 0
+    # For deployments and stateful sets
+    if Map.has_key?(status, "replicas") do
+      Map.get(status, "replicas", 0) == 0 && Map.get(status, "readyReplicas", 0) == 0
+    # For cron jobs
+    else
+      Map.get(status, "suspended", false) == true
+    end
   end
 
   defp check_deployment_status(axn, check_fn) do
-    case SleepSchedule.get_deployments(axn.resource) do
-      {:ok, deployments} ->
-        result = Enum.all?(deployments, fn deployment ->
-          Logger.debug("Deployment #{Deployment.name(deployment)} replicas: #{Deployment.replicas(deployment)}, readyReplicas: #{Deployment.ready_replicas(deployment)}")
-          check_fn.(deployment["status"])
-        end)
-        {:ok, result}
-      {:error, error} ->
-        {:error, error}
+    with {:ok, deployments} <- SleepSchedule.get_deployments(axn.resource),
+         {:ok, stateful_sets} <- SleepSchedule.get_stateful_sets(axn.resource),
+         {:ok, cron_jobs} <- SleepSchedule.get_cron_jobs(axn.resource) do
+      
+      deployments_result = Enum.all?(deployments, fn deployment ->
+        Logger.debug("Deployment #{Deployment.name(deployment)} replicas: #{Deployment.replicas(deployment)}, readyReplicas: #{Deployment.ready_replicas(deployment)}")
+        check_fn.(deployment["status"])
+      end)
+      
+      stateful_sets_result = Enum.all?(stateful_sets, fn stateful_set ->
+        Logger.debug("StatefulSet #{StatefulSet.name(stateful_set)} replicas: #{StatefulSet.replicas(stateful_set)}, readyReplicas: #{StatefulSet.ready_replicas(stateful_set)}")
+        check_fn.(stateful_set["status"])
+      end)
+      
+      cron_jobs_result = Enum.all?(cron_jobs, fn cron_job ->
+        suspended = CronJob.suspend(cron_job)
+        Logger.debug("CronJob #{CronJob.name(cron_job)} suspended: #{suspended}")
+        # For sleeping, we want all jobs to be suspended (true)
+        # For waking, we want all jobs to not be suspended (false)
+        # check_fn will determine which state we're checking for
+        check_fn.(%{"suspended" => suspended})
+      end)
+      
+      # Determine which resources we need to check based on what's present
+      has_deployments = !Enum.empty?(deployments)
+      has_stateful_sets = !Enum.empty?(stateful_sets)
+      has_cron_jobs = !Enum.empty?(cron_jobs)
+      
+      cond do
+        !has_deployments && !has_stateful_sets && !has_cron_jobs -> {:ok, true}  # No resources to check
+        has_deployments && !has_stateful_sets && !has_cron_jobs -> {:ok, deployments_result}
+        !has_deployments && has_stateful_sets && !has_cron_jobs -> {:ok, stateful_sets_result}
+        !has_deployments && !has_stateful_sets && has_cron_jobs -> {:ok, cron_jobs_result}
+        has_deployments && has_stateful_sets && !has_cron_jobs -> {:ok, deployments_result && stateful_sets_result}
+        has_deployments && !has_stateful_sets && has_cron_jobs -> {:ok, deployments_result && cron_jobs_result}
+        !has_deployments && has_stateful_sets && has_cron_jobs -> {:ok, stateful_sets_result && cron_jobs_result}
+        true -> {:ok, deployments_result && stateful_sets_result && cron_jobs_result}  # Check all three
+      end
+    else
+      {:error, error} -> {:error, error}
     end
   end
 
@@ -220,7 +267,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     sleep_reason = if manual_override, do: "ManualSleep", else: "ScheduledSleep"
     axn
       |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
-      |> set_condition("Sleeping", true, sleep_reason, "Deployments have been scaled down and ingress redirected.")
+      |> set_condition("Sleeping", true, sleep_reason, "Deployments, StatefulSets, and CronJobs have been scaled down/suspended and ingress redirected.")
       |> set_condition("Error", false, "None", "No error")
   end
 
@@ -230,7 +277,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     wake_reason = if manual_override, do: "ManualWakeUp", else: "ScheduledWakeUp"
     axn
       |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
-      |> set_condition("Sleeping", false, wake_reason, "Deployments have been scaled up and ingress restored.")
+      |> set_condition("Sleeping", false, wake_reason, "Deployments and StatefulSets have been scaled up, CronJobs have been resumed, and ingress restored.")
       |> set_condition("Error", false, "None", "No error")
   end
 
