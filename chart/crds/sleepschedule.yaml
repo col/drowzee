@@ -52,7 +52,6 @@ spec:
               required:
                 - sleepTime
                 - timezone
-                - wakeTime
               properties:
                 deployments:
                   type: array

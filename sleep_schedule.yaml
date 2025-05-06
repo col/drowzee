@@ -37,3 +37,20 @@ spec:
     - name: service2
     - name: service2-worker
   ingressName: service2
+---
+apiVersion: drowzee.challengr.io/v1beta1
+kind: SleepSchedule
+metadata:
+  name: permanent-down
+  namespace: services
+spec:
+  sleepTime: '08:00pm'
+  # No wakeTime defined - resources will remain scaled down indefinitely
+  timezone: 'Australia/Sydney'
+  deployments:
+    - name: non-prod-service
+  statefulSets:
+    - name: non-prod-database
+  cronJobs:
+    - name: non-prod-backup
+  ingressName: non-prod-service

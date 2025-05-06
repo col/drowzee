@@ -54,6 +54,12 @@ defmodule Drowzee.Controller.SleepScheduleController do
     sleep_time = resource["spec"]["sleepTime"]
     wake_time = resource["spec"]["wakeTime"]
     timezone = resource["spec"]["timezone"]
+    
+    # Log if wake_time is not defined (resources will remain down indefinitely)
+    if is_nil(wake_time) or wake_time == "" do
+      Logger.info("Wake time is not defined for #{resource["metadata"]["name"]} in namespace #{resource["metadata"]["namespace"]}. Resources will remain scaled down/suspended indefinitely.")
+    end
+    
     case Drowzee.SleepChecker.naptime?(sleep_time, wake_time, timezone) do
       {:ok, naptime} ->
         %{axn | assigns: Map.put(axn.assigns, :naptime, naptime)}
@@ -264,10 +270,24 @@ defmodule Drowzee.Controller.SleepScheduleController do
   defp complete_sleep_transition(axn, opts) do
     Logger.info("Sleep transition complete")
     manual_override = Keyword.get(opts, :manual_override, false)
-    sleep_reason = if manual_override, do: "ManualSleep", else: "ScheduledSleep"
+    wake_time = axn.resource["spec"]["wakeTime"]
+    permanent_sleep = is_nil(wake_time) or wake_time == ""
+    
+    sleep_reason = cond do
+      manual_override -> "ManualSleep"
+      permanent_sleep -> "PermanentSleep"
+      true -> "ScheduledSleep"
+    end
+    
+    sleep_message = if permanent_sleep do
+      "Deployments, StatefulSets, and CronJobs have been scaled down/suspended indefinitely and ingress redirected."
+    else
+      "Deployments, StatefulSets, and CronJobs have been scaled down/suspended and ingress redirected."
+    end
+    
     axn
       |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
-      |> set_condition("Sleeping", true, sleep_reason, "Deployments, StatefulSets, and CronJobs have been scaled down/suspended and ingress redirected.")
+      |> set_condition("Sleeping", true, sleep_reason, sleep_message)
       |> set_condition("Error", false, "None", "No error")
   end
 
