@@ -14,8 +14,8 @@ defmodule Drowzee.Controller.SleepScheduleController do
   def handle_event(%Bonny.Axn{action: action} = axn, _opts)
       when action in [:add, :modify, :reconcile] do
     Logger.metadata(
-      schedule_name: axn.resource["metadata"]["name"],
-      schedule_namespace: axn.resource["metadata"]["namespace"]
+      schedule: axn.resource["metadata"]["name"],
+      namespace: axn.resource["metadata"]["namespace"]
     )
     axn
     |> add_default_conditions()
