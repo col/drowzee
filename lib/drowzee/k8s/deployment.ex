@@ -1,21 +1,13 @@
 defmodule Drowzee.K8s.Deployment do
   require Logger
 
-  def name(deployment) do
-    deployment["metadata"]["name"]
-  end
+  def name(deployment), do: deployment["metadata"]["name"]
 
-  def namespace(deployment) do
-    deployment["metadata"]["namespace"]
-  end
+  def namespace(deployment), do: deployment["metadata"]["namespace"]
 
-  def replicas(deployment) do
-    deployment["spec"]["replicas"] || 0
-  end
+  def replicas(deployment), do: deployment["spec"]["replicas"] || 0
 
-  def ready_replicas(deployment) do
-    deployment["status"]["readyReplicas"] || 0
-  end
+  def ready_replicas(deployment), do: deployment["status"]["readyReplicas"] || 0
 
   def scale_deployment(%{"kind" => "Deployment"} = deployment, replicas) do
     Logger.info("Scaling deployment", name: name(deployment), replicas: replicas)
