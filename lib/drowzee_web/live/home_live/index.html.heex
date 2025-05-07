@@ -155,6 +155,7 @@
           <ul class="grid grid-cols-2 gap-2 text-gray-700">
             <%= for deployment <- sleep_schedule["spec"]["deployments"] do %>
               <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
+                <% d = @deployments_by_name[deployment["name"]] %>
                 <%= if d && (Map.get(d["spec"], "replicas", 0) > 0) do %>
                   🚀
                 <% else %>
@@ -171,7 +172,8 @@
           <ul class="grid grid-cols-2 gap-2 text-gray-700">
             <%= for statefulset <- sleep_schedule["spec"]["statefulsets"] || [] do %>
               <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
-                <%= if d && (Map.get(d["spec"], "replicas", 0) > 0) do %>
+                <% s = @statefulsets_by_name[statefulset["name"]] %>
+                <%= if s && (Map.get(d["spec"], "replicas", 0) > 0) do %>
                   🚀
                 <% else %>
                   💤
@@ -187,6 +189,7 @@
           <ul class="grid grid-cols-2 gap-2 text-gray-700">
             <%= for cronjob <- sleep_schedule["spec"]["cronjobs"] || [] do %>
               <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
+                <% c = @cronjobs_by_name[cronjob["name"]] %>
                 <%= if c && Map.get(c["spec"], "suspend", false) == false do %>
                   🚀
                 <% else %>
