@@ -135,14 +135,14 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   defp scale_down_deployments(axn) do
     SleepSchedule.scale_down_deployments(axn.resource)
-    SleepSchedule.scale_down_stateful_sets(axn.resource)
+    SleepSchedule.scale_down_statefulsets(axn.resource)
     SleepSchedule.suspend_cron_jobs(axn.resource)
     axn
   end
 
   defp scale_up_deployments(axn) do
     SleepSchedule.scale_up_deployments(axn.resource)
-    SleepSchedule.scale_up_stateful_sets(axn.resource)
+    SleepSchedule.scale_up_statefulsets(axn.resource)
     SleepSchedule.resume_cron_jobs(axn.resource)
     axn
   end
@@ -204,7 +204,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp deployment_status_ready?(status) do
-    # For deployments and stateful sets
+    # For deployments and statefulsets
     if Map.has_key?(status, "replicas") do
       status["replicas"] != nil && status["readyReplicas"] != nil && status["replicas"] == status["readyReplicas"]
     # For cron jobs
@@ -214,7 +214,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp deployment_status_asleep?(status) do
-    # For deployments and stateful sets
+    # For deployments and statefulsets
     if Map.has_key?(status, "replicas") do
       Map.get(status, "replicas", 0) == 0 && Map.get(status, "readyReplicas", 0) == 0
     # For cron jobs
@@ -225,7 +225,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   defp check_deployment_status(axn, check_fn) do
     with {:ok, deployments} <- SleepSchedule.get_deployments(axn.resource),
-         {:ok, stateful_sets} <- SleepSchedule.get_stateful_sets(axn.resource),
+         {:ok, statefulsets} <- SleepSchedule.get_statefulsets(axn.resource),
          {:ok, cron_jobs} <- SleepSchedule.get_cron_jobs(axn.resource) do
       
       deployments_result = Enum.all?(deployments, fn deployment ->
@@ -233,7 +233,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
         check_fn.(deployment["status"])
       end)
       
-      stateful_sets_result = Enum.all?(stateful_sets, fn stateful_set ->
+      statefulsets_result = Enum.all?(statefulsets, fn stateful_set ->
         Logger.debug("StatefulSet #{StatefulSet.name(stateful_set)} replicas: #{StatefulSet.replicas(stateful_set)}, readyReplicas: #{StatefulSet.ready_replicas(stateful_set)}")
         check_fn.(stateful_set["status"])
       end)
@@ -249,18 +249,18 @@ defmodule Drowzee.Controller.SleepScheduleController do
       
       # Determine which resources we need to check based on what's present
       has_deployments = !Enum.empty?(deployments)
-      has_stateful_sets = !Enum.empty?(stateful_sets)
+      has_statefulsets = !Enum.empty?(statefulsets)
       has_cron_jobs = !Enum.empty?(cron_jobs)
       
       cond do
-        !has_deployments && !has_stateful_sets && !has_cron_jobs -> {:ok, true}  # No resources to check
-        has_deployments && !has_stateful_sets && !has_cron_jobs -> {:ok, deployments_result}
-        !has_deployments && has_stateful_sets && !has_cron_jobs -> {:ok, stateful_sets_result}
-        !has_deployments && !has_stateful_sets && has_cron_jobs -> {:ok, cron_jobs_result}
-        has_deployments && has_stateful_sets && !has_cron_jobs -> {:ok, deployments_result && stateful_sets_result}
-        has_deployments && !has_stateful_sets && has_cron_jobs -> {:ok, deployments_result && cron_jobs_result}
-        !has_deployments && has_stateful_sets && has_cron_jobs -> {:ok, stateful_sets_result && cron_jobs_result}
-        true -> {:ok, deployments_result && stateful_sets_result && cron_jobs_result}  # Check all three
+        !has_deployments && !has_statefulsets && !has_cron_jobs -> {:ok, true}  # No resources to check
+        has_deployments && !has_statefulsets && !has_cron_jobs -> {:ok, deployments_result}
+        !has_deployments && has_statefulsets && !has_cron_jobs -> {:ok, statefulsets_result}
+        !has_deployments && !has_statefulsets && has_cron_jobs -> {:ok, cron_jobs_result}
+        has_deployments && has_statefulsets && !has_cron_jobs -> {:ok, deployments_result && statefulsets_result}
+        has_deployments && !has_statefulsets && has_cron_jobs -> {:ok, deployments_result && cron_jobs_result}
+        !has_deployments && has_statefulsets && has_cron_jobs -> {:ok, statefulsets_result && cron_jobs_result}
+        true -> {:ok, deployments_result && statefulsets_result && cron_jobs_result}  # Check all three
       end
     else
       {:error, error} -> {:error, error}

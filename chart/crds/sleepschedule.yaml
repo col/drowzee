@@ -65,7 +65,7 @@ spec:
                         type: string
                 statefulSets:
                   type: array
-                  description: The stateful sets that will be slept/woken.
+                  description: The statefulsets that will be slept/woken.
                   items:
                     type: object
                     required:
