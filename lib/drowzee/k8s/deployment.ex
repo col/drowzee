@@ -15,6 +15,7 @@ defmodule Drowzee.K8s.Deployment do
   def save_original_replicas(deployment) do
     annotations = get_in(deployment, ["metadata", "annotations"]) || %{}
     current = get_in(deployment, ["spec", "replicas"]) || 0
+    current_str = Integer.to_string(current)
 
     # Only save if:
     # - annotation is missing OR
@@ -22,9 +23,9 @@ defmodule Drowzee.K8s.Deployment do
     # This way, if someone changed the replica count while awake, you update it before sleep
     case Map.get(annotations, "drowzee.io/original-replicas") do
       nil when current > 0 ->
-        put_in(deployment, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
-      value when value != Integer.to_string(current) and current > 0 ->
-        put_in(deployment, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
+        put_in(deployment, ["metadata", "annotations", "drowzee.io/original-replicas"], current_str)
+      value when value != current_str and current > 0 ->
+        put_in(deployment, ["metadata", "annotations", "drowzee.io/original-replicas"], current_str)
       _ ->
         deployment
     end
