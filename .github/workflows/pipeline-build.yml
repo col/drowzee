@@ -1,0 +1,23 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/sts_jobs
+
+concurrency:
+  # One build per PR, do not cancel builds on main
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    uses: chirpwireless/reusable-github-actions/.github/workflows/build-k8s-service.yml@main
+    permissions:
+      contents: write
+      packages: write
+      checks: write
+    secrets: inherit
+    with:
+      service_name: "drowzee"
