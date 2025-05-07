@@ -38,8 +38,11 @@ rules:
       - '*'
   - resources:
       - deployments
+      - statefulsets
+      - cronjobs
     apiGroups:
       - "apps"
+      - "batch"
     verbs:
       - '*'
   - resources:
