@@ -9,6 +9,29 @@ defmodule Drowzee.K8s.Deployment do
 
   def ready_replicas(deployment), do: deployment["status"]["readyReplicas"] || 0
 
+  @doc """
+  Always save (or update) the current replica count as an annotation on the deployment.
+  """
+  def save_original_replicas(deployment) do
+    current = get_in(deployment, ["spec", "replicas"]) || 0
+    put_in(deployment, ["metadata", "annotations", "drowzee.chirpwireless.io/original-replicas"], Integer.to_string(current))
+  end
+
+  @doc """
+  Get the original replicas count from the annotation, as integer. Default to 1 if missing or invalid.
+  """
+  def get_original_replicas(deployment) do
+    annotations = get_in(deployment, ["metadata", "annotations"]) || %{}
+    case Map.get(annotations, "drowzee.chirpwireless.io/original-replicas") do
+      nil -> 1
+      value ->
+        case Integer.parse(value) do
+          {count, _} -> count
+          :error -> 1
+        end
+    end
+  end
+
   def scale_deployment(%{"kind" => "Deployment"} = deployment, replicas) do
     Logger.info("Scaling deployment", name: name(deployment), replicas: replicas)
     deployment = put_in(deployment["spec"]["replicas"], replicas)

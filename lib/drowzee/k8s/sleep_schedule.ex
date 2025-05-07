@@ -109,7 +109,11 @@ defmodule Drowzee.K8s.SleepSchedule do
     Logger.debug("Scaling down deployments...")
     case get_deployments(sleep_schedule) do
       {:ok, deployments} ->
-        results = Enum.map(deployments, &Deployment.scale_deployment(&1, 0))
+        results =
+          Enum.map(deployments, fn deployment ->
+            deployment = Deployment.save_original_replicas(deployment)
+            Deployment.scale_deployment(deployment, 0)
+          end)
         {:ok, results}
       {:error, error} ->
         {:error, error}
@@ -120,7 +124,11 @@ defmodule Drowzee.K8s.SleepSchedule do
     Logger.debug("Scaling down statefulsets...")
     case get_statefulsets(sleep_schedule) do
       {:ok, statefulsets} ->
-        results = Enum.map(statefulsets, &StatefulSet.scale_statefulset(&1, 0))
+        results =
+          Enum.map(statefulsets, fn statefulset ->
+            statefulset = Statefulset.save_original_replicas(statefulset)
+            Statefulset.scale_statefulset(statefulset, 0)
+          end)
         {:ok, results}
       {:error, error} ->
         {:error, error}
@@ -142,7 +150,10 @@ defmodule Drowzee.K8s.SleepSchedule do
     Logger.debug("Scaling up deployments...")
     case get_deployments(sleep_schedule) do
       {:ok, deployments} ->
-        results = Enum.map(deployments, &Deployment.scale_deployment(&1, 1))
+        results = Enum.map(deployments, fn deployment ->
+          original = Deployment.get_original_replicas(deployment)
+          Deployment.scale_deployment(deployment, original)
+        end)
         {:ok, results}
       {:error, error} ->
         {:error, error}
@@ -153,7 +164,11 @@ defmodule Drowzee.K8s.SleepSchedule do
     Logger.debug("Scaling up statefulsets...")
     case get_statefulsets(sleep_schedule) do
       {:ok, statefulsets} ->
-        results = Enum.map(statefulsets, &StatefulSet.scale_statefulset(&1, 1))
+        results =
+          Enum.map(statefulsets, fn statefulset ->
+            original = Statefulset.get_original_replicas(statefulset)
+            Statefulset.scale_statefulset(statefulset, original)
+          end)
         {:ok, results}
       {:error, error} ->
         {:error, error}
