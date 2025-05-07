@@ -14,7 +14,7 @@ defmodule Drowzee.K8s.Deployment do
   """
   def save_original_replicas(deployment) do
     current = get_in(deployment, ["spec", "replicas"]) || 0
-    put_in(deployment, ["metadata", "annotations", "drowzee.chirpwireless.io/original-replicas"], Integer.to_string(current))
+    put_in(deployment, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
   end
 
   @doc """
@@ -22,7 +22,7 @@ defmodule Drowzee.K8s.Deployment do
   """
   def get_original_replicas(deployment) do
     annotations = get_in(deployment, ["metadata", "annotations"]) || %{}
-    case Map.get(annotations, "drowzee.chirpwireless.io/original-replicas") do
+    case Map.get(annotations, "drowzee.io/original-replicas") do
       nil -> 1
       value ->
         case Integer.parse(value) do

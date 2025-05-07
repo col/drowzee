@@ -14,7 +14,7 @@ defmodule Drowzee.K8s.StatefulSet do
   """
   def save_original_replicas(statefulset) do
     current = get_in(statefulset, ["spec", "replicas"]) || 0
-    put_in(statefulset, ["metadata", "annotations", "drowzee.chirpwireless.io/original-replicas"], Integer.to_string(current))
+    put_in(statefulset, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
   end
 
   @doc """
@@ -22,7 +22,7 @@ defmodule Drowzee.K8s.StatefulSet do
   """
   def get_original_replicas(statefulset) do
     annotations = get_in(statefulset, ["metadata", "annotations"]) || %{}
-    case Map.get(annotations, "drowzee.chirpwireless.io/original-replicas") do
+    case Map.get(annotations, "drowzee.io/original-replicas") do
       nil -> 1
       value ->
         case Integer.parse(value) do
