@@ -90,21 +90,21 @@ defmodule Drowzee.K8s do
   end
 
   def get_deployment(name, namespace) do
-    Logger.debug("Fetching deployment", deployment_name: name)
+    Logger.debug("Fetching deployment", deployment: name)
     K8s.Client.get("apps/v1", :deployment, name: name, namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
   end
 
   def get_statefulset(name, namespace) do
-    Logger.debug("Fetching statefulset", statefulset_name: name)
+    Logger.debug("Fetching statefulset", statefulset: name)
     K8s.Client.get("apps/v1", :statefulset, name: name, namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
   end
 
   def get_cron_job(name, namespace) do
-    Logger.debug("Fetching cronjob", cron_job_name: name)
+    Logger.debug("Fetching cronjob", cron_job: name)
     K8s.Client.get("batch/v1", :cronjob, name: name, namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
