@@ -214,12 +214,16 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp deployment_status_asleep?(status) do
-    # For deployments and statefulsets
-    if Map.has_key?(status, "replicas") do
-      Map.get(status, "replicas", 0) == 0 && Map.get(status, "readyReplicas", 0) == 0
-    # For cronjobs
-    else
-      Map.get(status, "suspended", false) == true
+    replicas = Map.get(status, "replicas", 0)
+    ready = Map.get(status, "readyReplicas", 0)
+    suspended = Map.get(status, "suspended", nil)
+
+    cond do
+      not is_nil(suspended) ->
+        suspended == true
+
+      true ->
+        replicas == 0 and ready == 0
     end
   end
 
