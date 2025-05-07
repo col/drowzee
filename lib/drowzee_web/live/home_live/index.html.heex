@@ -164,7 +164,7 @@
         <div class="mt-4">
           <h3 class="text-lg font-medium text-gray-700 mb-2">📦 StatefulSets:</h3>
           <ul class="grid grid-cols-2 gap-2 text-gray-700">
-            <%= for statefulset <- sleep_schedule["spec"]["statefulsets"] do %>
+            <%= for statefulset <- sleep_schedule["spec"]["statefulsets"] || [] do %>
               <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
                 🚀 <%= statefulset["name"] %>
               </li>
@@ -175,7 +175,7 @@
         <div class="mt-4">
           <h3 class="text-lg font-medium text-gray-700 mb-2">📦 CronJobs:</h3>
           <ul class="grid grid-cols-2 gap-2 text-gray-700">
-            <%= for cron_job <- sleep_schedule["spec"]["cronjobs"] do %>
+            <%= for cron_job <- sleep_schedule["spec"]["cronjobs"] || [] do %>
               <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
                 🚀 <%= cron_job["name"] %>
               </li>
