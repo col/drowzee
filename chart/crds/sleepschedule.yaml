@@ -63,7 +63,7 @@ spec:
                     properties:
                       name:
                         type: string
-                statefulSets:
+                statefulsets:
                   type: array
                   description: The statefulsets that will be slept/woken.
                   items:
@@ -116,7 +116,7 @@ spec:
         - name: StatefulSets
           type: string
           description: StatefulSets
-          jsonPath: .spec.statefulSets[*].name
+          jsonPath: .spec.statefulsets[*].name
         - name: CronJobs
           type: string
           description: CronJobs

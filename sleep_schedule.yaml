@@ -3,9 +3,9 @@ kind: SleepSchedule
 metadata:
   name: testing
 spec:
-  sleepTime: '10:00pm'
-  wakeTime: '09:00am'
-  timezone: 'Australia/Sydney'
+  sleepTime: "10:00pm"
+  wakeTime: "09:00am"
+  timezone: "Australia/Sydney"
   deployments:
     - name: dummy-service
   ingressName: dummy-service
@@ -16,9 +16,9 @@ metadata:
   name: service1
   namespace: services
 spec:
-  sleepTime: '10:00pm'
-  wakeTime: '09:00am'
-  timezone: 'Australia/Sydney'
+  sleepTime: "10:00pm"
+  wakeTime: "09:00am"
+  timezone: "Australia/Sydney"
   deployments:
     - name: service1
     - name: service1-worker
@@ -30,9 +30,9 @@ metadata:
   name: service2
   namespace: services
 spec:
-  sleepTime: '10:00pm'
-  wakeTime: '09:00am'
-  timezone: 'Australia/Sydney'
+  sleepTime: "10:00pm"
+  wakeTime: "09:00am"
+  timezone: "Australia/Sydney"
   deployments:
     - name: service2
     - name: service2-worker
@@ -44,12 +44,12 @@ metadata:
   name: permanent-down
   namespace: services
 spec:
-  sleepTime: '08:00pm'
+  sleepTime: "08:00pm"
   # No wakeTime defined - resources will remain scaled down indefinitely
-  timezone: 'Australia/Sydney'
+  timezone: "Australia/Sydney"
   deployments:
     - name: non-prod-service
-  statefulSets:
+  statefulsets:
     - name: non-prod-database
   cronJobs:
     - name: non-prod-backup

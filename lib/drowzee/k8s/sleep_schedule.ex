@@ -18,8 +18,8 @@ defmodule Drowzee.K8s.SleepSchedule do
     |> Enum.map(& &1["name"])
   end
 
-  def stateful_set_names(sleep_schedule) do
-    (sleep_schedule["spec"]["statefulSets"] || [])
+  def statefulset_names(sleep_schedule) do
+    (sleep_schedule["spec"]["statefulsets"] || [])
     |> Enum.map(& &1["name"])
   end
 
@@ -79,12 +79,12 @@ defmodule Drowzee.K8s.SleepSchedule do
   @retry with: exponential_backoff(1000) |> Stream.take(2)
   def get_statefulsets(sleep_schedule) do
     namespace = namespace(sleep_schedule)
-    results = (stateful_set_names(sleep_schedule) || [])
-      |> Stream.map(&Drowzee.K8s.get_stateful_set(&1, namespace))
+    results = (statefulset_names(sleep_schedule) || [])
+      |> Stream.map(&Drowzee.K8s.get_statefulset(&1, namespace))
       |> Enum.to_list()
 
     case Enum.all?(results, fn {:ok, _} -> true; _ -> false end) do
-      true -> {:ok, Enum.map(results, fn {:ok, stateful_set} -> stateful_set end)}
+      true -> {:ok, Enum.map(results, fn {:ok, statefulset} -> statefulset end)}
       false -> {:error, Enum.filter(results, fn {:error, _} -> true; _ -> false end) |> Enum.map(fn {:error, error} -> error end)}
     end
   end
@@ -117,7 +117,7 @@ defmodule Drowzee.K8s.SleepSchedule do
     Logger.debug("Scaling down statefulsets...")
     case get_statefulsets(sleep_schedule) do
       {:ok, statefulsets} ->
-        results = Enum.map(statefulsets, &StatefulSet.scale_stateful_set(&1, 0))
+        results = Enum.map(statefulsets, &StatefulSet.scale_statefulset(&1, 0))
         {:ok, results}
       {:error, error} ->
         {:error, error}
@@ -150,7 +150,7 @@ defmodule Drowzee.K8s.SleepSchedule do
     Logger.debug("Scaling up statefulsets...")
     case get_statefulsets(sleep_schedule) do
       {:ok, statefulsets} ->
-        results = Enum.map(statefulsets, &StatefulSet.scale_stateful_set(&1, 1))
+        results = Enum.map(statefulsets, &StatefulSet.scale_statefulset(&1, 1))
         {:ok, results}
       {:error, error} ->
         {:error, error}

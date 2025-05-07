@@ -233,9 +233,9 @@ defmodule Drowzee.Controller.SleepScheduleController do
         check_fn.(deployment["status"])
       end)
       
-      statefulsets_result = Enum.all?(statefulsets, fn stateful_set ->
-        Logger.debug("StatefulSet #{StatefulSet.name(stateful_set)} replicas: #{StatefulSet.replicas(stateful_set)}, readyReplicas: #{StatefulSet.ready_replicas(stateful_set)}")
-        check_fn.(stateful_set["status"])
+      statefulsets_result = Enum.all?(statefulsets, fn statefulset ->
+        Logger.debug("StatefulSet #{StatefulSet.name(statefulset)} replicas: #{StatefulSet.replicas(statefulset)}, readyReplicas: #{StatefulSet.ready_replicas(statefulset)}")
+        check_fn.(statefulset["status"])
       end)
       
       cron_jobs_result = Enum.all?(cron_jobs, fn cron_job ->
