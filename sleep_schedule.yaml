@@ -51,6 +51,6 @@ spec:
     - name: non-prod-service
   statefulsets:
     - name: non-prod-database
-  cronJobs:
+  cronjobs:
     - name: non-prod-backup
   ingressName: non-prod-service

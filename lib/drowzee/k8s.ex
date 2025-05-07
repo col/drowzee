@@ -104,7 +104,7 @@ defmodule Drowzee.K8s do
   end
 
   def get_cron_job(name, namespace) do
-    Logger.debug("Fetching cron job", cron_job_name: name)
+    Logger.debug("Fetching cronjob", cron_job_name: name)
     K8s.Client.get("batch/v1", :cronjob, name: name, namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()

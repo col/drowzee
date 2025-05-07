@@ -24,7 +24,7 @@ defmodule Drowzee.K8s.SleepSchedule do
   end
 
   def cron_job_names(sleep_schedule) do
-    (sleep_schedule["spec"]["cronJobs"] || [])
+    (sleep_schedule["spec"]["cronjobs"] || [])
     |> Enum.map(& &1["name"])
   end
 
@@ -125,7 +125,7 @@ defmodule Drowzee.K8s.SleepSchedule do
   end
 
   def suspend_cron_jobs(sleep_schedule) do
-    Logger.debug("Suspending cron jobs...")
+    Logger.debug("Suspending cronjobs...")
     case get_cron_jobs(sleep_schedule) do
       {:ok, cron_jobs} ->
         results = Enum.map(cron_jobs, &CronJob.suspend_cron_job(&1, true))
@@ -158,7 +158,7 @@ defmodule Drowzee.K8s.SleepSchedule do
   end
 
   def resume_cron_jobs(sleep_schedule) do
-    Logger.debug("Resuming cron jobs...")
+    Logger.debug("Resuming cronjobs...")
     case get_cron_jobs(sleep_schedule) do
       {:ok, cron_jobs} ->
         results = Enum.map(cron_jobs, &CronJob.suspend_cron_job(&1, false))

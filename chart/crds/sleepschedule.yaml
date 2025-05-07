@@ -73,9 +73,9 @@ spec:
                     properties:
                       name:
                         type: string
-                cronJobs:
+                cronjobs:
                   type: array
-                  description: The cron jobs that will be suspended/resumed.
+                  description: The cronjobs that will be suspended/resumed.
                   items:
                     type: object
                     required:
@@ -120,7 +120,7 @@ spec:
         - name: CronJobs
           type: string
           description: CronJobs
-          jsonPath: .spec.cronJobs[*].name
+          jsonPath: .spec.cronjobs[*].name
         - name: Sleeping?
           type: string
           description: Current Status
