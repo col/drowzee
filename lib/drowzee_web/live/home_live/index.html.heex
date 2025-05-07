@@ -173,7 +173,7 @@
             <%= for statefulset <- sleep_schedule["spec"]["statefulsets"] || [] do %>
               <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
                 <% s = @statefulsets_by_name[statefulset["name"]] %>
-                <%= if s && (Map.get(d["spec"], "replicas", 0) > 0) do %>
+                <%= if s && (Map.get(s["spec"], "replicas", 0) > 0) do %>
                   🚀
                 <% else %>
                   💤
