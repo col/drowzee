@@ -13,8 +13,21 @@ defmodule Drowzee.K8s.StatefulSet do
   Always save (or update) the current replica count as an annotation on the statefulset.
   """
   def save_original_replicas(statefulset) do
+    annotations = get_in(statefulset, ["metadata", "annotations"]) || %{}
     current = get_in(statefulset, ["spec", "replicas"]) || 0
-    put_in(statefulset, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
+
+    # Only save if:
+    # - annotation is missing OR
+    # - annotation value != current AND current > 0
+    # This way, if someone changed the replica count while awake, you update it before sleep
+    case Map.get(annotations, "drowzee.io/original-replicas") do
+      nil when current > 0 ->
+        put_in(statefulset, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
+      value when value != Integer.to_string(current) and current > 0 ->
+        put_in(statefulset, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
+      _ ->
+        statefulset
+    end
   end
 
   @doc """

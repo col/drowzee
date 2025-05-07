@@ -13,8 +13,21 @@ defmodule Drowzee.K8s.Deployment do
   Always save (or update) the current replica count as an annotation on the deployment.
   """
   def save_original_replicas(deployment) do
+    annotations = get_in(deployment, ["metadata", "annotations"]) || %{}
     current = get_in(deployment, ["spec", "replicas"]) || 0
-    put_in(deployment, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
+
+    # Only save if:
+    # - annotation is missing OR
+    # - annotation value != current AND current > 0
+    # This way, if someone changed the replica count while awake, you update it before sleep
+    case Map.get(annotations, "drowzee.io/original-replicas") do
+      nil when current > 0 ->
+        put_in(deployment, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
+      value when value != Integer.to_string(current) and current > 0 ->
+        put_in(deployment, ["metadata", "annotations", "drowzee.io/original-replicas"], Integer.to_string(current))
+      _ ->
+        deployment
+    end
   end
 
   @doc """
