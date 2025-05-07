@@ -14,16 +14,19 @@ defmodule Drowzee.K8s.SleepSchedule do
   end
 
   def deployment_names(sleep_schedule) do
+    Logger.debug("Deployment entries: #{inspect(sleep_schedule["spec"]["deployments"])}")
     (sleep_schedule["spec"]["deployments"] || [])
     |> Enum.map(& &1["name"])
   end
 
   def statefulset_names(sleep_schedule) do
+    Logger.debug("Statefulsets entries: #{inspect(sleep_schedule["spec"]["statefulsets"])}")
     (sleep_schedule["spec"]["statefulsets"] || [])
     |> Enum.map(& &1["name"])
   end
 
   def cron_job_names(sleep_schedule) do
+  Logger.debug("CronJobs entries: #{inspect(sleep_schedule["spec"]["cronjobs"])}")
     (sleep_schedule["spec"]["cronjobs"] || [])
     |> Enum.map(& &1["name"])
   end

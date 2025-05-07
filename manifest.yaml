@@ -34,8 +34,8 @@ spec:
                       status:
                         type: string
                         enum:
-                          - 'True'
-                          - 'False'
+                          - "True"
+                          - "False"
                       type:
                         type: string
                       reason:
@@ -71,13 +71,13 @@ spec:
                   description: The ingress that will be slept/woken.
                 sleepTime:
                   type: string
-                  description: 'The time that the deployment will start sleeping(format: HH:MMam/pm)'
+                  description: "The time that the deployment will start sleeping(format: HH:MMam/pm)"
                 timezone:
                   type: string
                   description: The timezone that the input times are based in
                 wakeTime:
                   type: string
-                  description: 'The time that the deployment will wake up (format: HH:MMam/pm)'
+                  description: "The time that the deployment will wake up (format: HH:MMam/pm)"
       storage: true
       additionalPrinterColumns:
         - name: SleepTime
@@ -130,50 +130,50 @@ rules:
     apiGroups:
       - apiextensions.k8s.io
     verbs:
-      - '*'
+      - "*"
   - resources:
       - leases
     apiGroups:
       - coordination.k8s.io
     verbs:
-      - '*'
+      - "*"
   - resources:
       - sleepschedules
     apiGroups:
       - drowzee.challengr.io
     verbs:
-      - '*'
+      - "*"
   - resources:
       - sleepschedules/status
     apiGroups:
       - drowzee.challengr.io
     verbs:
-      - '*'
+      - "*"
   - resources:
       - events
     apiGroups:
       - events.k8s.io
     verbs:
-      - '*'
+      - "*"
   - resources:
       - deployments
     apiGroups:
       - "apps"
     verbs:
-      - '*'
+      - "*"
   - resources:
       - ingresses
     apiGroups:
       - networking.k8s.io
     verbs:
-      - '*'
+      - "*"
   - resources:
       - services
-      - configmaps      
+      - configmaps
     apiGroups:
       - ""
     verbs:
-      - '*'
+      - "*"
 
 ---
 metadata:
