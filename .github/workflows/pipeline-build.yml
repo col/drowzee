@@ -16,8 +16,7 @@ env:
 
 jobs:
   generate-version:
-    runs-on:
-      group: scw-k8s-dev
+    runs-on: ubuntu-latest
     outputs:
       service-version: ${{ steps.version.outputs.new_version }}
     steps:
@@ -29,8 +28,7 @@ jobs:
           echo "Building a new revision ${{steps.version.outputs.new_version}}" > $GITHUB_STEP_SUMMARY
 
   build-docker-image:
-    runs-on:
-      group: scw-k8s-dev
+    runs-on: ubuntu-latest
     needs: [generate-version]
     steps:
       - name: Checkout code
@@ -51,8 +49,7 @@ jobs:
           tags: ghcr.io/${{ github.repository_owner }}/drowzee:${{ needs.generate-version.outputs.service-version }}
 
   build-helm-chart:
-    runs-on:
-      group: scw-k8s-dev
+    runs-on: ubuntu-latest
     needs: [generate-version]
     steps:
       - name: Checkout code
@@ -93,8 +90,7 @@ jobs:
           user_email: 41898282+github-actions[bot]@users.noreply.github.com
 
   publish-version:
-    runs-on:
-      group: scw-k8s-dev
+    runs-on: ubuntu-latest
     needs: [generate-version, build-docker-image, build-helm-chart]
     permissions:
       checks: write
@@ -107,8 +103,7 @@ jobs:
 
   publish-release:
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
-    runs-on:
-      group: scw-k8s-dev
+    runs-on: ubuntu-latest
     needs: [generate-version, build-docker-image, build-helm-chart]
     steps:
       - uses: chirpwireless/reusable-github-actions/.github/actions/publish-release@main
