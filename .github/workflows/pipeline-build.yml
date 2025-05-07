@@ -11,13 +11,106 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
 
+env:
+  HOME: ${{github.workspace}}
+
 jobs:
-  validate:
-    uses: chirpwireless/reusable-github-actions/.github/workflows/build-k8s-service.yml@main
+  generate-version:
+    runs-on:
+      group: scw-k8s-dev
+    outputs:
+      service-version: ${{ steps.version.outputs.new_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        uses: chirpwireless/reusable-github-actions/.github/actions/calendar-version@main
+      - name: "Create a summary"
+        run: |
+          echo "Building a new revision ${{steps.version.outputs.new_version}}" > $GITHUB_STEP_SUMMARY
+
+  build-docker-image:
+    runs-on:
+      group: scw-k8s-dev
+    needs: [generate-version]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/drowzee:${{ needs.generate-version.outputs.service-version }}
+
+  build-helm-chart:
+    runs-on:
+      group: scw-k8s-dev
+    needs: [generate-version]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Update Chart Versions
+        run: |
+          sed -i "s/^version: .*/version: ${{ needs.generate-version.outputs.service-version }}/" chart/Chart.yaml
+          sed -i "s/^appVersion: .*/appVersion: \"${{ needs.generate-version.outputs.service-version }}\"/" chart/Chart.yaml
+      - name: Retrieve existing charts
+        run: |
+          git clone --branch gh-pages https://github.com/${{ github.repository_owner }}/drowzee.git existing-charts || true
+          mkdir -p packaged-charts
+          cp -n existing-charts/*.tgz packaged-charts/ || true
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+      - name: Package Chart
+        run: helm package ./chart --destination ./packaged-charts
+      - name: Generate Repository Index
+        run: |
+          helm repo index ./packaged-charts --url https://${{ github.repository_owner }}.github.io/drowzee
+      # Popular action to deploy to GitHub Pages:
+      # Docs: https://github.com/peaceiris/actions-gh-pages#%EF%B8%8F-docusaurus
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # Build output to publish to the `gh-pages` branch:
+          publish_dir: ./packaged-charts
+          keep_files: true
+          force_orphan: true
+          destination_dir: .
+          # The following lines assign commit authorship to the official
+          # GH-Actions bot for deploys to `gh-pages` branch:
+          # https://github.com/actions/checkout/issues/13#issuecomment-724415212
+          # The GH actions bot is used by default if you didn't specify the two fields.
+          # You can swap them out with your own user credentials.
+          user_name: github-actions[bot]
+          user_email: 41898282+github-actions[bot]@users.noreply.github.com
+
+  publish-version:
+    runs-on:
+      group: scw-k8s-dev
+    needs: [generate-version, build-docker-image, build-helm-chart]
     permissions:
-      contents: write
-      packages: write
       checks: write
-    secrets: inherit
-    with:
-      service_name: "drowzee"
+    steps:
+      - name: Publish Version
+        uses: chirpwireless/reusable-github-actions/.github/actions/version-publish@main
+        with:
+          commit-sha: ${{ github.event.pull_request.head.sha || github.sha }}
+          build-version: ${{ needs.generate-version.outputs.service-version }}
+
+  publish-release:
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    runs-on:
+      group: scw-k8s-dev
+    needs: [generate-version, build-docker-image, build-helm-chart]
+    steps:
+      - uses: chirpwireless/reusable-github-actions/.github/actions/publish-release@main
+        with:
+          version: ${{ needs.generate-version.outputs.service-version }}
