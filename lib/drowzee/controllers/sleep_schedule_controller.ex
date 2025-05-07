@@ -54,12 +54,12 @@ defmodule Drowzee.Controller.SleepScheduleController do
     sleep_time = resource["spec"]["sleepTime"]
     wake_time = resource["spec"]["wakeTime"]
     timezone = resource["spec"]["timezone"]
-    
+
     # Log if wake_time is not defined (resources will remain down indefinitely)
     if is_nil(wake_time) or wake_time == "" do
       Logger.info("Wake time is not defined for #{resource["metadata"]["name"]} in namespace #{resource["metadata"]["namespace"]}. Resources will remain scaled down/suspended indefinitely.")
     end
-    
+
     case Drowzee.SleepChecker.naptime?(sleep_time, wake_time, timezone) do
       {:ok, naptime} ->
         %{axn | assigns: Map.put(axn.assigns, :naptime, naptime)}
@@ -136,14 +136,14 @@ defmodule Drowzee.Controller.SleepScheduleController do
   defp scale_down_deployments(axn) do
     SleepSchedule.scale_down_deployments(axn.resource)
     SleepSchedule.scale_down_statefulsets(axn.resource)
-    SleepSchedule.suspend_cron_jobs(axn.resource)
+    SleepSchedule.suspend_cronjobs(axn.resource)
     axn
   end
 
   defp scale_up_deployments(axn) do
     SleepSchedule.scale_up_deployments(axn.resource)
     SleepSchedule.scale_up_statefulsets(axn.resource)
-    SleepSchedule.resume_cron_jobs(axn.resource)
+    SleepSchedule.resume_cronjobs(axn.resource)
     axn
   end
 
@@ -204,12 +204,17 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   defp deployment_status_ready?(status) do
-    # For deployments and statefulsets
-    if Map.has_key?(status, "replicas") do
-      status["replicas"] != nil && status["readyReplicas"] != nil && status["replicas"] == status["readyReplicas"]
-    # For cronjobs
-    else
-      Map.get(status, "suspended", true) == false
+    replicas = Map.get(status, "replicas")
+    ready_replicas = Map.get(status, "readyReplicas")
+    suspended = Map.get(status, "suspended", true)
+
+    cond do
+      not is_nil(replicas) and not is_nil(ready_replicas) ->
+        replicas == ready_replicas
+
+      true ->
+        # For CronJobs: considered ready if not suspended
+        suspended == false
     end
   end
 
@@ -230,41 +235,50 @@ defmodule Drowzee.Controller.SleepScheduleController do
   defp check_deployment_status(axn, check_fn) do
     with {:ok, deployments} <- SleepSchedule.get_deployments(axn.resource),
          {:ok, statefulsets} <- SleepSchedule.get_statefulsets(axn.resource),
-         {:ok, cron_jobs} <- SleepSchedule.get_cron_jobs(axn.resource) do
-      
-      deployments_result = Enum.all?(deployments, fn deployment ->
-        Logger.debug("Deployment #{Deployment.name(deployment)} replicas: #{Deployment.replicas(deployment)}, readyReplicas: #{Deployment.ready_replicas(deployment)}")
-        check_fn.(deployment["status"])
-      end)
-      
-      statefulsets_result = Enum.all?(statefulsets, fn statefulset ->
-        Logger.debug("StatefulSet #{StatefulSet.name(statefulset)} replicas: #{StatefulSet.replicas(statefulset)}, readyReplicas: #{StatefulSet.ready_replicas(statefulset)}")
-        check_fn.(statefulset["status"])
-      end)
-      
-      cron_jobs_result = Enum.all?(cron_jobs, fn cron_job ->
-        suspended = CronJob.suspend(cron_job)
-        Logger.debug("CronJob #{CronJob.name(cron_job)} suspended: #{suspended}")
-        # For sleeping, we want all jobs to be suspended (true)
-        # For waking, we want all jobs to not be suspended (false)
-        # check_fn will determine which state we're checking for
+         {:ok, cronjobs} <- SleepSchedule.get_cronjobs(axn.resource) do
+
+      deployments_result =
+        Enum.all?(deployments, fn deployment ->
+          Logger.debug(
+            "Deployment #{Deployment.name(deployment)} replicas: #{Deployment.replicas(deployment)}, readyReplicas: #{Deployment.ready_replicas(deployment)}"
+          )
+
+          check_fn.(deployment["status"])
+        end)
+
+      statefulsets_result =
+        Enum.all?(statefulsets, fn statefulset ->
+          Logger.debug(
+            "StatefulSet #{StatefulSet.name(statefulset)} replicas: #{StatefulSet.replicas(statefulset)}, readyReplicas: #{StatefulSet.ready_replicas(statefulset)}"
+          )
+
+          check_fn.(statefulset["status"])
+        end)
+
+      cronjobs_result =
+      Enum.all?(cronjobs, fn cronjob ->
+        suspended = CronJob.suspend(cronjob)
+
+        Logger.debug("CronJob #{CronJob.name(cronjob)} suspended: #{suspended}")
+
+        # check_fn determines if suspended is the expected state (true for sleep, false for wake)
         check_fn.(%{"suspended" => suspended})
       end)
-      
+
       # Determine which resources we need to check based on what's present
-      has_deployments = !Enum.empty?(deployments)
-      has_statefulsets = !Enum.empty?(statefulsets)
-      has_cron_jobs = !Enum.empty?(cron_jobs)
-      
-      cond do
-        !has_deployments && !has_statefulsets && !has_cron_jobs -> {:ok, true}  # No resources to check
-        has_deployments && !has_statefulsets && !has_cron_jobs -> {:ok, deployments_result}
-        !has_deployments && has_statefulsets && !has_cron_jobs -> {:ok, statefulsets_result}
-        !has_deployments && !has_statefulsets && has_cron_jobs -> {:ok, cron_jobs_result}
-        has_deployments && has_statefulsets && !has_cron_jobs -> {:ok, deployments_result && statefulsets_result}
-        has_deployments && !has_statefulsets && has_cron_jobs -> {:ok, deployments_result && cron_jobs_result}
-        !has_deployments && has_statefulsets && has_cron_jobs -> {:ok, statefulsets_result && cron_jobs_result}
-        true -> {:ok, deployments_result && statefulsets_result && cron_jobs_result}  # Check all three
+      has_deployments   = Enum.any?(deployments)
+      has_statefulsets  = Enum.any?(statefulsets)
+      has_cronjobs     = Enum.any?(cronjobs)
+
+      case {has_deployments, has_statefulsets, has_cronjobs} do
+        {false, false, false} -> {:ok, true}
+        {true,  false, false} -> {:ok, deployments_result}
+        {false, true,  false} -> {:ok, statefulsets_result}
+        {false, false, true}  -> {:ok, cronjobs_result}
+        {true,  true,  false} -> {:ok, deployments_result && statefulsets_result}
+        {true,  false, true}  -> {:ok, deployments_result && cronjobs_result}
+        {false, true,  true}  -> {:ok, statefulsets_result && cronjobs_result}
+        {true,  true,  true}  -> {:ok, deployments_result && statefulsets_result && cronjobs_result}
       end
     else
       {:error, error} -> {:error, error}
@@ -276,19 +290,19 @@ defmodule Drowzee.Controller.SleepScheduleController do
     manual_override = Keyword.get(opts, :manual_override, false)
     wake_time = axn.resource["spec"]["wakeTime"]
     permanent_sleep = is_nil(wake_time) or wake_time == ""
-    
+
     sleep_reason = cond do
       manual_override -> "ManualSleep"
       permanent_sleep -> "PermanentSleep"
       true -> "ScheduledSleep"
     end
-    
+
     sleep_message = if permanent_sleep do
       "Deployments, StatefulSets, and CronJobs have been scaled down/suspended indefinitely and ingress redirected."
     else
       "Deployments, StatefulSets, and CronJobs have been scaled down/suspended and ingress redirected."
     end
-    
+
     axn
       |> set_condition("Transitioning", false, "NoTransition", "No transition in progress")
       |> set_condition("Sleeping", true, sleep_reason, sleep_message)
@@ -308,14 +322,14 @@ defmodule Drowzee.Controller.SleepScheduleController do
   defp put_ingress_to_sleep(axn) do
     case SleepSchedule.put_ingress_to_sleep(axn.resource) do
       {:ok, _} ->
-        Logger.info("Updated ingress to redirect to Drowzee", ingress_name: SleepSchedule.ingress_name(axn.resource))
+        Logger.info("Updated ingress to redirect to Drowzee", name: SleepSchedule.ingress_name(axn.resource))
         # register_event(axn, nil, :Normal, "SleepIngress", "Ingress has been redirected to Drowzee")
         axn
       {:error, :ingress_name_not_set} ->
         Logger.info("No ingressName has been provided so there is nothing to redirect")
         axn
       {:error, error} ->
-        Logger.error("Failed to redirect ingress to Drowzee: #{inspect(error)}", ingress_name: SleepSchedule.ingress_name(axn.resource))
+        Logger.error("Failed to redirect ingress to Drowzee: #{inspect(error)}", name: SleepSchedule.ingress_name(axn.resource))
         axn
     end
   end
@@ -323,14 +337,14 @@ defmodule Drowzee.Controller.SleepScheduleController do
   defp wake_up_ingress(axn) do
     case SleepSchedule.wake_up_ingress(axn.resource) do
       {:ok, _} ->
-        Logger.info("Removed Drowzee redirect from ingress", ingress_name: SleepSchedule.ingress_name(axn.resource))
+        Logger.info("Removed Drowzee redirect from ingress", name: SleepSchedule.ingress_name(axn.resource))
         # register_event(axn, nil, :Normal, "WakeUpIngress", "Ingress has been restored")
         axn
       {:error, :ingress_name_not_set} ->
         Logger.info("No ingressName has been provided so there is nothing to restore")
         axn
       {:error, error} ->
-        Logger.error("Failed to remove Drowzee redirect from ingress: #{inspect(error)}", ingress_name: SleepSchedule.ingress_name(axn.resource))
+        Logger.error("Failed to remove Drowzee redirect from ingress: #{inspect(error)}", name: SleepSchedule.ingress_name(axn.resource))
         axn
     end
   end

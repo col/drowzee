@@ -73,7 +73,7 @@ defmodule Drowzee.K8s do
   def get_drowzee_ingress() do
     name = "drowzee"
     namespace = drowzee_namespace()
-    Logger.debug("Fetching drowzee ingress", ingress_name: name, drowzee_namespace: namespace)
+    Logger.debug("Fetching drowzee ingress", name: name, drowzee_namespace: namespace)
     K8s.Client.get("networking.k8s.io/v1", :ingress, name: name, namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
@@ -90,21 +90,21 @@ defmodule Drowzee.K8s do
   end
 
   def get_deployment(name, namespace) do
-    Logger.debug("Fetching deployment", deployment: name)
+    Logger.debug("Fetching deployment", name: name)
     K8s.Client.get("apps/v1", :deployment, name: name, namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
   end
 
   def get_statefulset(name, namespace) do
-    Logger.debug("Fetching statefulset", statefulset: name)
+    Logger.debug("Fetching statefulset", name: name)
     K8s.Client.get("apps/v1", :statefulset, name: name, namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
   end
 
-  def get_cron_job(name, namespace) do
-    Logger.debug("Fetching cronjob", cron_job: name)
+  def get_cronjob(name, namespace) do
+    Logger.debug("Fetching cronjob", name: name)
     K8s.Client.get("batch/v1", :cronjob, name: name, namespace: namespace)
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()

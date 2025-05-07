@@ -18,12 +18,12 @@ defmodule Drowzee.K8s.Deployment do
   end
 
   def scale_deployment(%{"kind" => "Deployment"} = deployment, replicas) do
-    Logger.info("Scaling deployment", deployment: name(deployment), replicas: replicas)
+    Logger.info("Scaling deployment", name: name(deployment), replicas: replicas)
     deployment = put_in(deployment["spec"]["replicas"], replicas)
     case K8s.Client.run(Drowzee.K8s.conn(), K8s.Client.update(deployment)) do
       {:ok, deployment} -> {:ok, deployment}
       {:error, reason} ->
-        Logger.error("Failed to scale deployment: #{inspect(reason)}", deployment: name(deployment), replicas: replicas)
+        Logger.error("Failed to scale deployment: #{inspect(reason)}", name: name(deployment), replicas: replicas)
         {:error, reason}
     end
   end

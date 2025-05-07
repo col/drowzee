@@ -25,7 +25,7 @@ defmodule Drowzee.K8s.SleepSchedule do
     |> Enum.map(& &1["name"])
   end
 
-  def cron_job_names(sleep_schedule) do
+  def cronjob_names(sleep_schedule) do
   Logger.debug("CronJobs entries: #{inspect(sleep_schedule["spec"]["cronjobs"])}")
     (sleep_schedule["spec"]["cronjobs"] || [])
     |> Enum.map(& &1["name"])
@@ -59,7 +59,7 @@ defmodule Drowzee.K8s.SleepSchedule do
       "" -> {:error, :ingress_name_not_set}
       ingress_name ->
         namespace = namespace(sleep_schedule)
-        Logger.debug("Fetching ingress", ingress_name: ingress_name)
+        Logger.debug("Fetching ingress", name: ingress_name)
         K8s.Client.get("networking.k8s.io/v1", :ingress, name: ingress_name, namespace: namespace)
         |> K8s.Client.put_conn(Drowzee.K8s.conn())
         |> K8s.Client.run()
@@ -93,14 +93,14 @@ defmodule Drowzee.K8s.SleepSchedule do
   end
 
   @retry with: exponential_backoff(1000) |> Stream.take(2)
-  def get_cron_jobs(sleep_schedule) do
+  def get_cronjobs(sleep_schedule) do
     namespace = namespace(sleep_schedule)
-    results = (cron_job_names(sleep_schedule) || [])
-      |> Stream.map(&Drowzee.K8s.get_cron_job(&1, namespace))
+    results = (cronjob_names(sleep_schedule) || [])
+      |> Stream.map(&Drowzee.K8s.get_cronjob(&1, namespace))
       |> Enum.to_list()
 
     case Enum.all?(results, fn {:ok, _} -> true; _ -> false end) do
-      true -> {:ok, Enum.map(results, fn {:ok, cron_job} -> cron_job end)}
+      true -> {:ok, Enum.map(results, fn {:ok, cronjob} -> cronjob end)}
       false -> {:error, Enum.filter(results, fn {:error, _} -> true; _ -> false end) |> Enum.map(fn {:error, error} -> error end)}
     end
   end
@@ -127,11 +127,11 @@ defmodule Drowzee.K8s.SleepSchedule do
     end
   end
 
-  def suspend_cron_jobs(sleep_schedule) do
+  def suspend_cronjobs(sleep_schedule) do
     Logger.debug("Suspending cronjobs...")
-    case get_cron_jobs(sleep_schedule) do
-      {:ok, cron_jobs} ->
-        results = Enum.map(cron_jobs, &CronJob.suspend_cron_job(&1, true))
+    case get_cronjobs(sleep_schedule) do
+      {:ok, cronjobs} ->
+        results = Enum.map(cronjobs, &CronJob.suspend_cronjob(&1, true))
         {:ok, results}
       {:error, error} ->
         {:error, error}
@@ -160,11 +160,11 @@ defmodule Drowzee.K8s.SleepSchedule do
     end
   end
 
-  def resume_cron_jobs(sleep_schedule) do
+  def resume_cronjobs(sleep_schedule) do
     Logger.debug("Resuming cronjobs...")
-    case get_cron_jobs(sleep_schedule) do
-      {:ok, cron_jobs} ->
-        results = Enum.map(cron_jobs, &CronJob.suspend_cron_job(&1, false))
+    case get_cronjobs(sleep_schedule) do
+      {:ok, cronjobs} ->
+        results = Enum.map(cronjobs, &CronJob.suspend_cronjob(&1, false))
         {:ok, results}
       {:error, error} ->
         {:error, error}
