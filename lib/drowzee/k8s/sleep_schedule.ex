@@ -126,8 +126,8 @@ defmodule Drowzee.K8s.SleepSchedule do
       {:ok, statefulsets} ->
         results =
           Enum.map(statefulsets, fn statefulset ->
-            statefulset = Statefulset.save_original_replicas(statefulset)
-            Statefulset.scale_statefulset(statefulset, 0)
+            statefulset = StatefulSet.save_original_replicas(statefulset)
+            StatefulSet.scale_statefulset(statefulset, 0)
           end)
         {:ok, results}
       {:error, error} ->
@@ -166,8 +166,8 @@ defmodule Drowzee.K8s.SleepSchedule do
       {:ok, statefulsets} ->
         results =
           Enum.map(statefulsets, fn statefulset ->
-            original = Statefulset.get_original_replicas(statefulset)
-            Statefulset.scale_statefulset(statefulset, original)
+            original = StatefulSet.get_original_replicas(statefulset)
+            StatefulSet.scale_statefulset(statefulset, original)
           end)
         {:ok, results}
       {:error, error} ->
