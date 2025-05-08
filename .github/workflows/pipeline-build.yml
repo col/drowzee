@@ -58,9 +58,22 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+      - name: Compute Chart Version
+        id: chart_version
+        run: |
+          BASE_VERSION=$(grep '^version:' chart/Chart.yaml | awk '{print $2}')
+          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
+            VERSION="$BASE_VERSION"
+          else
+            PATCH=$(echo $BASE_VERSION | awk -F. '{print $3}')
+            PATCH=$((PATCH + 1))
+            PREFIX=$(echo $BASE_VERSION | awk -F. '{print $1"."$2}')
+            VERSION="${PREFIX}.${PATCH}-${{ needs.generate-version.outputs.service-version }}"
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Update Chart Versions
         run: |
-          sed -i "s/^version: .*/version: ${{ needs.generate-version.outputs.service-version }}/" chart/Chart.yaml
+          sed -i "s/^version: .*/version: ${{ steps.chart_version.outputs.version }}/" chart/Chart.yaml
           sed -i "s/^appVersion: .*/appVersion: \"${{ needs.generate-version.outputs.service-version }}\"/" chart/Chart.yaml
       - name: Retrieve existing charts
         run: |
