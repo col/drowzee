@@ -100,6 +100,22 @@ defmodule DrowzeeWeb.HomeLive.Index do
   end
 
   @impl true
+  def handle_event("toggle_enabled", %{"name" => name, "namespace" => namespace}, socket) do
+    sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
+    enabled = sleep_schedule["spec"]["enabled"]
+    new_enabled = not enabled
+    updated_sleep_schedule =
+      put_in(sleep_schedule, ["spec", "enabled"], new_enabled)
+      |> Drowzee.K8s.update_sleep_schedule()
+      |> case do
+        {:ok, s} -> s
+        {:error, _} -> sleep_schedule
+      end
+    socket = replace_sleep_schedule(socket, updated_sleep_schedule)
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("sleep_all_schedules", %{"namespace" => namespace}, socket) when is_binary(namespace) do
     sleep_schedules = Drowzee.K8s.sleep_schedules(namespace)
 

@@ -90,37 +90,57 @@
               </.link>
             <% end %>
           </h2>
-          <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
-            <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
-              <button class="px-4 py-2 text-sm rounded-lg bg-green-300 text-white cursor-not-allowed">
-                ☕️ Waking up...
-              </button>
+          <div class="flex gap-2 items-center">
+            <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
+              <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
+                <button class="px-4 py-2 text-sm rounded-lg bg-green-300 text-white cursor-not-allowed">
+                  ☕️ Waking up...
+                </button>
+              <% else %>
+                <.link
+                  phx-click="wake_schedule"
+                  phx-value-name={sleep_schedule["metadata"]["name"]}
+                  phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
+                  class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed"
+                >
+                  ☕️ Wake Up
+                </.link>
+              <% end %>
             <% else %>
-              <.link
-                phx-click="wake_schedule"
-                phx-value-name={sleep_schedule["metadata"]["name"]}
-                phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-                class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed"
-              >
-                ☕️ Wake Up
-              </.link>
+              <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
+                <button class="px-4 py-2 text-sm rounded-lg bg-blue-300 text-white cursor-not-allowed">
+                  💤 Sleeping...
+                </button>
+              <% else %>
+                <.link
+                  phx-click="sleep_schedule"
+                  phx-value-name={sleep_schedule["metadata"]["name"]}
+                  phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
+                  class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                >
+                  💤 Sleep
+                </.link>
+              <% end %>
             <% end %>
-          <% else %>
-            <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
-              <button class="px-4 py-2 text-sm rounded-lg bg-blue-300 text-white cursor-not-allowed">
-                💤 Sleeping...
-              </button>
-            <% else %>
-              <.link
-                phx-click="sleep_schedule"
-                phx-value-name={sleep_schedule["metadata"]["name"]}
-                phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-                class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
-              >
-                💤 Sleep
-              </.link>
-            <% end %>
-          <% end %>
+            <.link
+              phx-click="toggle_enabled"
+              phx-value-name={sleep_schedule["metadata"]["name"]}
+              phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
+              class={
+                if sleep_schedule["spec"]["enabled"] == false do
+                  "px-4 py-2 text-sm rounded-lg bg-gray-400 text-white hover:bg-gray-500"
+                else
+                  "px-4 py-2 text-sm rounded-lg bg-yellow-400 text-white hover:bg-yellow-500"
+                end
+              }
+            >
+              <%= if sleep_schedule["spec"]["enabled"] == false do %>
+                ▶️ Enable
+              <% else %>
+                ⏸️ Disable
+              <% end %>
+            </.link>
+          </div>
         </div>
 
         <div class="text-gray-600 mt-4">

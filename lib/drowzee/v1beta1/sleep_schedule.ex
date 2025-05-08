@@ -51,6 +51,11 @@ defmodule Drowzee.API.V1Beta1.SleepSchedule do
             spec: %{
               type: :object,
               properties: %{
+                enabled: %{
+                  type: :boolean,
+                  description: "Whether this schedule is enabled.",
+                  default: true
+                },
                 deployments: %{
                   description: "The deployments that will be slept/woken.",
                   type: :array,
