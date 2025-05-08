@@ -19,13 +19,25 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       service-version: ${{ steps.version.outputs.new_version }}
+      chart-version: ${{ steps.chart_version.outputs.new_version }}
     steps:
       - uses: actions/checkout@v4
       - id: version
         uses: chirpwireless/reusable-github-actions/.github/actions/calendar-version@main
+      - name: Chart Version
+        id: chart_version
+        run: |
+          BASE_VERSION=$(grep '^version:' chart/Chart.yaml | awk '{print $2}')
+          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
+            VERSION="$BASE_VERSION"
+          else
+            VERSION="${BASE_VERSION}-${{steps.version.outputs.new_version}}"
+          fi
+          echo "new_version=$VERSION" >> $GITHUB_OUTPUT
       - name: "Create a summary"
         run: |
-          echo "Building a new revision ${{steps.version.outputs.new_version}}" > $GITHUB_STEP_SUMMARY
+          echo "Building a new revision ${{steps.version.outputs.new_version}}\n" > $GITHUB_STEP_SUMMARY
+          echo "Building a new chart revision ${{steps.chart_version.outputs.new_version}}" >> $GITHUB_STEP_SUMMARY
 
   build-docker-image:
     runs-on: ubuntu-latest
@@ -58,19 +70,9 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Compute Chart Version
-        id: chart_version
-        run: |
-          BASE_VERSION=$(grep '^version:' chart/Chart.yaml | awk '{print $2}')
-          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
-            VERSION="$BASE_VERSION"
-          else
-            VERSION="${BASE_VERSION}-${{ needs.generate-version.outputs.service-version }}"
-          fi
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
       - name: Update Chart Versions
         run: |
-          sed -i "s/^version: .*/version: ${{ steps.chart_version.outputs.version }}/" chart/Chart.yaml
+          sed -i "s/^version: .*/version: ${{ needs.generate-version.outputs.chart-version }}/" chart/Chart.yaml
           sed -i "s/^appVersion: .*/appVersion: \"${{ needs.generate-version.outputs.service-version }}\"/" chart/Chart.yaml
       - name: Retrieve existing charts
         run: |
