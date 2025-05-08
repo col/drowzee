@@ -21,12 +21,24 @@ defmodule Drowzee.Operator do
     namespaces = Drowzee.Config.namespaces()
     # Note: To watch all namespaces set BONNY_POD_NAMESPACE to "__ALL__"
     Logger.info("Configuring SleepScheduleController controller with namespace(s): #{Enum.join(namespaces, ", ")}")
-    Enum.map(namespaces, fn namespace ->
-      %{
-        query: K8s.Client.watch("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: namespace),
-        controller: Drowzee.Controller.SleepScheduleController
-      }
-    end)
+    
+    if Enum.member?(namespaces, "__ALL__") do
+      # Watch all namespaces
+      [
+        %{
+          query: K8s.Client.watch("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: :all),
+          controller: Drowzee.Controller.SleepScheduleController
+        }
+      ]
+    else
+      # Watch specific namespaces
+      Enum.map(namespaces, fn namespace ->
+        %{
+          query: K8s.Client.watch("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: namespace),
+          controller: Drowzee.Controller.SleepScheduleController
+        }
+      end)
+    end
   end
 
   @impl Bonny.Operator
