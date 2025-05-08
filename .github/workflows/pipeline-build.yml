@@ -78,7 +78,16 @@ jobs:
         run: |
           git clone --branch gh-pages https://github.com/${{ github.repository_owner }}/drowzee.git existing-charts || true
           mkdir -p packaged-charts
-          cp -n existing-charts/*.tgz packaged-charts/ || true
+
+          if [[ "${GITHUB_REF##*/}" == "main" ]]; then
+            for file in existing-charts/*; do
+              if [[ ! $(basename "$file") == drowzee-${{ needs.generate-version.outputs.chart-version }}* ]]; then
+                cp "$file" packaged-charts/
+              fi
+            done
+          else
+            cp -n existing-charts/*.tgz packaged-charts/ || true
+          fi
       - name: Set up Helm
         uses: azure/setup-helm@v4
       - name: Package Chart
