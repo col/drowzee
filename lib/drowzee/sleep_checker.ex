@@ -1,7 +1,7 @@
 defmodule Drowzee.SleepChecker do
   require Logger
 
-  def naptime?(sleep_time, nil, timezone) do
+  def naptime?(_sleep_time, nil, _timezone) do
     # If wake_time is nil, always consider it naptime (always sleeping)
     Logger.debug("Wake time is not defined, resources will remain scaled down/suspended indefinitely")
     {:ok, true}

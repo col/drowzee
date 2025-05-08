@@ -17,6 +17,8 @@ defmodule Drowzee.TransitionMonitor do
     Bonny.PeriodicTask.new(task_name, {Drowzee.TransitionMonitor, :monitor_transition, [name, namespace, 1]}, 5000)
   end
 
+  @spec monitor_transition(binary(), :all | binary(), any()) ::
+          {:ok, [:all | binary() | number(), ...]} | {:stop, <<_::152, _::_*192>>}
   def monitor_transition(name, namespace, attempt) do
     sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
     case {Drowzee.K8s.SleepSchedule.get_condition(sleep_schedule, "Transitioning"), attempt} do

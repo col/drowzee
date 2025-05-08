@@ -21,11 +21,11 @@ defmodule Drowzee.Controller.SleepScheduleController do
       Logger.info("Schedule is disabled. Skipping...")
       axn
     else
-      handle_event_enabled(axn, _opts)
+      handle_event_enabled(axn)
     end
   end
 
-  def handle_event_enabled(%Bonny.Axn{action: action} = axn, _opts)
+  def handle_event_enabled(%Bonny.Axn{action: action} = axn)
       when action in [:add, :modify, :reconcile] do
     Logger.metadata(
       schedule: axn.resource["metadata"]["name"],

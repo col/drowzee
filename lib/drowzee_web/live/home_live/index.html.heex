@@ -177,10 +177,12 @@
             <%= for deployment <- sleep_schedule["spec"]["deployments"] do %>
               <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
                 <% d = @deployments_by_name[deployment["name"]] %>
-                <%= if d && (Map.get(d["spec"], "replicas", 0) > 0) do %>
-                  🚀
-                <% else %>
-                  💤
+                <%= if @name do %>
+                  <%= if d && (Map.get(d["spec"], "replicas", 0) > 0) do %>
+                    🚀
+                  <% else %>
+                    💤
+                  <% end %>
                 <% end %>
                 <span class="ml-1"><%= deployment["name"] %></span>
               </li>
@@ -196,10 +198,12 @@
             <%= for statefulset <- sleep_schedule["spec"]["statefulsets"] || [] do %>
               <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
                 <% s = @statefulsets_by_name[statefulset["name"]] %>
-                <%= if s && (Map.get(s["spec"], "replicas", 0) > 0) do %>
-                  🚀
-                <% else %>
-                  💤
+                <%= if @name do %>
+                  <%= if s && (Map.get(s["spec"], "replicas", 0) > 0) do %>
+                    🚀
+                  <% else %>
+                    💤
+                  <% end %>
                 <% end %>
                 <span class="ml-1"><%= statefulset["name"] %></span>
               </li>
@@ -215,10 +219,12 @@
             <%= for cronjob <- sleep_schedule["spec"]["cronjobs"] || [] do %>
               <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
                 <% c = @cronjobs_by_name[cronjob["name"]] %>
-                <%= if c && Map.get(c["spec"], "suspend", false) == false do %>
-                  🚀
-                <% else %>
-                  💤
+                <%= if @name do %>
+                  <%= if c && Map.get(c["spec"], "suspend", false) == false do %>
+                    🚀
+                  <% else %>
+                    💤
+                  <% end %>
                 <% end %>
                 <span class="ml-1"><%= cronjob["name"] %></span>
               </li>
