@@ -81,7 +81,7 @@ jobs:
 
           if [[ "${GITHUB_REF##*/}" == "main" ]]; then
             for file in existing-charts/*; do
-              if [[ ! $(basename "$file") == drowzee-${{ needs.generate-version.outputs.chart-version }}* ]]; then
+              if [[ ! $(basename "$file") == drowzee-${{ needs.generate-version.outputs.chart-version }}-* ]]; then
                 cp "$file" packaged-charts/
               fi
             done
