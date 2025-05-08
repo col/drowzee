@@ -22,8 +22,8 @@ defmodule Drowzee.Operator do
     # Note: To watch all namespaces set BONNY_POD_NAMESPACE to "__ALL__"
     Logger.info("Configuring SleepScheduleController controller with namespace(s): #{Enum.join(namespaces, ", ")}")
     
-    if Enum.member?(namespaces, "__ALL__") do
-      # Watch all namespaces
+    if Enum.member?(namespaces, :all) do
+      # If :all is in the list, watch all namespaces
       [
         %{
           query: K8s.Client.watch("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: :all),
@@ -31,7 +31,7 @@ defmodule Drowzee.Operator do
         }
       ]
     else
-      # Watch specific namespaces
+      # Otherwise watch the specific namespaces
       Enum.map(namespaces, fn namespace ->
         %{
           query: K8s.Client.watch("drowzee.challengr.io/v1beta1", "SleepSchedule", namespace: namespace),
