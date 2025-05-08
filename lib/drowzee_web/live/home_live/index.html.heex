@@ -154,10 +154,14 @@
         >
           <div class="flex justify-between items-center">
             <h2 class="text-2xl font-semibold text-gray-800">
-              <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
-                🛌
+              <%= if sleep_schedule["spec"]["enabled"] == false do %>
+                🛑
               <% else %>
-                😃
+                <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
+                  🛌
+                <% else %>
+                  😃
+                <% end %>
               <% end %>
               <%= if @namespace == nil do %>
                 <.link navigate={~p"/#{sleep_schedule["metadata"]["namespace"]}"}>
