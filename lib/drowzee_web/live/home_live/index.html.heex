@@ -1,6 +1,41 @@
-<div class="flex relative">
+<div class="flex flex-col md:flex-row relative max-w-6xl mx-auto justify-center">
+  <!-- Cloud-shaped Table of Contents - Desktop & Mobile -->
+  <div class="md:sticky md:top-4 md:self-start md:mr-4 md:w-72 z-30">
+    <div class="fixed md:relative top-2 right-2 md:top-0 md:right-0 md:left-0 pointer-events-auto">
+      <button class="md:hidden absolute -top-2 -left-2 z-40 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md" onclick="toggleTOC()">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+        </svg>
+      </button>
+      <div id="cloudTOC" class="bg-blue-50 rounded-3xl shadow-lg p-5 border-2 border-blue-100 relative overflow-hidden hidden md:block transform transition-transform hover:scale-102 w-56 md:w-auto">
+        <!-- Cloud decorations -->
+        <div class="absolute -top-6 -left-6 w-16 h-16 rounded-full bg-white opacity-70"></div>
+        <div class="absolute -top-2 left-6 w-10 h-10 rounded-full bg-white opacity-60"></div>
+        <div class="absolute top-1/4 -right-6 w-12 h-12 rounded-full bg-white opacity-70"></div>
+        <div class="absolute -bottom-4 -left-4 w-14 h-14 rounded-full bg-white opacity-70"></div>
+        
+        <div class="relative z-10">
+          <h3 class="font-semibold text-gray-700 mb-3 text-center">Jump to schedule</h3>
+          <div class="max-h-[calc(100vh-200px)] overflow-y-auto pr-1 space-y-2">
+            <%= for schedule <- @filtered_sleep_schedules || @sleep_schedules do %>
+              <a href={"#schedule-#{schedule["metadata"]["namespace"]}-#{schedule["metadata"]["name"]}"}
+                class="flex text-gray-800 hover:text-black px-3 py-2 rounded-xl transition-all duration-200 bg-white bg-opacity-70 hover:bg-opacity-100 text-sm truncate shadow-sm hover:shadow">
+                <span class="truncate">
+                  <%= if @namespace == nil do %>
+                    <%= String.capitalize(schedule["metadata"]["namespace"]) %> /
+                  <% end %>
+                  <%= String.capitalize(schedule["metadata"]["name"]) %>
+                </span>
+              </a>
+            <% end %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- Main Content -->
-  <div class="flex-1 max-w-3xl mx-auto p-6 space-y-10">
+  <div class="flex-1 max-w-3xl p-6 space-y-10 md:mx-auto">
 
     <div class="flex justify-between items-center h-auto rounded-xl shadow-lg p-4" style="background-color: #F8E892;">    
       <.link navigate={~p"/"} class="flex items-center">
@@ -59,43 +94,6 @@
     <% end %>
     </div>
 
-    <!-- Cloud-shaped Table of Contents - Desktop & Mobile -->
-    <div class="fixed md:sticky md:top-4 top-2 right-2 md:right-0 z-30 pointer-events-none">
-      <div class="flex justify-end">
-        <div class="w-56 md:w-72 pointer-events-auto transform transition-transform hover:scale-105">
-          <button class="md:hidden absolute -top-2 -left-2 z-40 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md" onclick="toggleTOC()">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-              <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
-            </svg>
-          </button>
-          <div id="cloudTOC" class="bg-blue-50 rounded-3xl shadow-lg p-5 border-2 border-blue-100 relative overflow-hidden hidden md:block">
-            <!-- Cloud decorations -->
-            <div class="absolute -top-6 -left-6 w-16 h-16 rounded-full bg-white opacity-70"></div>
-            <div class="absolute -top-2 left-6 w-10 h-10 rounded-full bg-white opacity-60"></div>
-            <div class="absolute top-1/4 -right-6 w-12 h-12 rounded-full bg-white opacity-70"></div>
-            <div class="absolute -bottom-4 -left-4 w-14 h-14 rounded-full bg-white opacity-70"></div>
-            
-            <div class="relative z-10">
-              <h3 class="font-semibold text-gray-700 mb-3 text-center">Jump to schedule</h3>
-              <div class="max-h-[calc(100vh-200px)] overflow-y-auto pr-1 space-y-2">
-                <%= for schedule <- @filtered_sleep_schedules || @sleep_schedules do %>
-                  <a href={"#schedule-#{schedule["metadata"]["namespace"]}-#{schedule["metadata"]["name"]}"}
-                    class="flex text-blue-700 hover:text-blue-900 px-3 py-2 rounded-xl transition-all duration-200 bg-white bg-opacity-70 hover:bg-opacity-100 text-sm truncate shadow-sm hover:shadow">
-                    <span class="truncate">
-                      <%= if @namespace == nil do %>
-                        <%= String.capitalize(schedule["metadata"]["namespace"]) %> /
-                      <% end %>
-                      <%= String.capitalize(schedule["metadata"]["name"]) %>
-                    </span>
-                  </a>
-                <% end %>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    
     <script>
       function toggleTOC() {
         const toc = document.getElementById('cloudTOC');
