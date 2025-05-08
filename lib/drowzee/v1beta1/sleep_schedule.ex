@@ -92,7 +92,7 @@ defmodule Drowzee.API.V1Beta1.SleepSchedule do
         }
       },
       additionalPrinterColumns: [
-        %{name: "Enabled", type: :string, description: "Enabled", jsonPath: ".spec.enabled"},
+        %{name: "Enabled", type: :boolean, description: "Enabled", jsonPath: ".spec.enabled"},
         %{name: "SleepTime", type: :string, description: "Starts Sleeping", jsonPath: ".spec.sleepTime"},
         %{name: "WakeTime", type: :string, description: "Wakes Up", jsonPath: ".spec.wakeTime"},
         %{name: "Timezone", type: :string, description: "Timezone", jsonPath: ".spec.timezone"},

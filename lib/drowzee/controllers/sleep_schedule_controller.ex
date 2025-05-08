@@ -12,8 +12,13 @@ defmodule Drowzee.Controller.SleepScheduleController do
   step :handle_event
 
   def handle_event(%Bonny.Axn{resource: %{"spec" => spec}} = axn, _opts) do
+    Logger.metadata(
+      schedule: axn.resource["metadata"]["name"],
+      namespace: axn.resource["metadata"]["namespace"]
+    )
+
     if Map.get(spec, "enabled", true) == false do
-      Logger.info("Schedule #{axn.resource["metadata"]["name"]} is disabled. Skipping.")
+      Logger.info("Schedule is disabled. Skipping...")
       axn
     else
       handle_event_enabled(axn, _opts)
@@ -38,7 +43,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
   def handle_event_enabled(%Bonny.Axn{action: :delete} = axn, _opts) do
     Logger.warning("Delete Action - Not yet implemented!")
     # TODO:
-    # - Make sure deployments are awake
+    # - Make sure applications are awake
     axn
   end
 
@@ -66,7 +71,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
     # Log if wake_time is not defined (resources will remain down indefinitely)
     if is_nil(wake_time) or wake_time == "" do
-      Logger.info("Wake time is not defined for #{resource["metadata"]["name"]} in namespace #{resource["metadata"]["namespace"]}. Resources will remain scaled down/suspended indefinitely.")
+      Logger.info("Wake time is not defined. Resources will remain scaled down/suspended indefinitely.")
     end
 
     case Drowzee.SleepChecker.naptime?(sleep_time, wake_time, timezone) do
@@ -125,7 +130,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     axn
     |> update_hosts()
     |> set_condition("Transitioning", true, "Sleeping", "Going to sleep")
-    |> scale_down_deployments()
+    |> scale_down_applications()
     |> start_transition_monitor()
   end
 
@@ -133,7 +138,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     Logger.info("Initiating wake up")
     axn
     |> set_condition("Transitioning", true, "WakingUp", "Waking up")
-    |> scale_up_deployments()
+    |> scale_up_applications()
     |> start_transition_monitor()
   end
 
@@ -142,14 +147,14 @@ defmodule Drowzee.Controller.SleepScheduleController do
     axn
   end
 
-  defp scale_down_deployments(axn) do
+  defp scale_down_applications(axn) do
     SleepSchedule.scale_down_deployments(axn.resource)
     SleepSchedule.scale_down_statefulsets(axn.resource)
     SleepSchedule.suspend_cronjobs(axn.resource)
     axn
   end
 
-  defp scale_up_deployments(axn) do
+  defp scale_up_applications(axn) do
     SleepSchedule.scale_up_deployments(axn.resource)
     SleepSchedule.scale_up_statefulsets(axn.resource)
     SleepSchedule.resume_cronjobs(axn.resource)
@@ -174,45 +179,45 @@ defmodule Drowzee.Controller.SleepScheduleController do
 
   defp check_sleep_transition(axn, opts) do
     Logger.info("Checking sleep transition...")
-    case check_deployment_status(axn, &deployment_status_asleep?/1) do
+    case check_application_status(axn, &application_status_asleep?/1) do
       {:ok, true} ->
-        Logger.debug("All deployments are asleep")
+        Logger.debug("All applications are asleep")
         axn
         |> put_ingress_to_sleep()
         |> complete_sleep_transition(opts)
       {:ok, false} ->
-        Logger.debug("Deployments have not yet scaled down...")
-        scale_down_deployments(axn)
+        Logger.debug("Applications have not yet scaled down...")
+        scale_down_applications(axn)
       {:error, [error | _]} ->
-        Logger.error("Failed to check deployment status: #{inspect(error)}")
-        set_condition(axn, "Error", true, "DeploymentNotFound", error.message)
+        Logger.error("Failed to check application status: #{inspect(error)}")
+        set_condition(axn, "Error", true, "ApplicationNotFound", error.message)
       {:error, error} ->
-        Logger.error("Failed to check deployment status: #{inspect(error)}")
+        Logger.error("Failed to check application status: #{inspect(error)}")
         axn
     end
   end
 
   defp check_wake_up_transition(axn, opts) do
     Logger.info("Checking wake up transition...")
-    case check_deployment_status(axn, &deployment_status_ready?/1) do
+    case check_application_status(axn, &application_status_ready?/1) do
       {:ok, true} ->
-        Logger.debug("All deployments are ready")
+        Logger.debug("All applications are ready")
         axn
         |> wake_up_ingress()
         |> complete_wake_up_transition(opts)
       {:ok, false} ->
-        Logger.debug("Deployments are not ready...")
-        scale_up_deployments(axn)
+        Logger.debug("Applications are not ready...")
+        scale_up_applications(axn)
       {:error, [error | _]} ->
-        Logger.error("Failed to check deployment status: #{inspect(error)}")
-        set_condition(axn, "Error", true, "DeploymentNotFound", error.message)
+        Logger.error("Failed to check application status: #{inspect(error)}")
+        set_condition(axn, "Error", true, "ApplicationNotFound", error.message)
       {:error, error} ->
-        Logger.error("Failed to check deployment status: #{inspect(error)}")
+        Logger.error("Failed to check applications status: #{inspect(error)}")
         axn
     end
   end
 
-  defp deployment_status_ready?(status) do
+  defp application_status_ready?(status) do
     replicas = Map.get(status, "replicas")
     ready_replicas = Map.get(status, "readyReplicas")
     suspended = Map.get(status, "suspended", true)
@@ -227,7 +232,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  defp deployment_status_asleep?(status) do
+  defp application_status_asleep?(status) do
     replicas = Map.get(status, "replicas", 0)
     ready = Map.get(status, "readyReplicas", 0)
     suspended = Map.get(status, "suspended", nil)
@@ -241,7 +246,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  defp check_deployment_status(axn, check_fn) do
+  defp check_application_status(axn, check_fn) do
     with {:ok, deployments} <- SleepSchedule.get_deployments(axn.resource),
          {:ok, statefulsets} <- SleepSchedule.get_statefulsets(axn.resource),
          {:ok, cronjobs} <- SleepSchedule.get_cronjobs(axn.resource) do

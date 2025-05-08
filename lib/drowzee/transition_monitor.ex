@@ -14,7 +14,7 @@ defmodule Drowzee.TransitionMonitor do
     Logger.info("Monitoring transition...")
     task_name = "monitor_transition_#{name}_#{namespace}" |> String.to_atom()
     Bonny.PeriodicTask.unregister(task_name)
-    Bonny.PeriodicTask.new(task_name, {Drowzee.TransitionMonitor, :monitor_transition, [name, namespace, 1]}, 30000)
+    Bonny.PeriodicTask.new(task_name, {Drowzee.TransitionMonitor, :monitor_transition, [name, namespace, 1]}, 5000)
   end
 
   def monitor_transition(name, namespace, attempt) do
