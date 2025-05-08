@@ -212,7 +212,9 @@ defmodule Drowzee.K8s.SleepSchedule do
   def update_sleep_schedule(sleep_schedule) do
     require Logger
     Logger.info("Updating SleepSchedule #{sleep_schedule["metadata"]["name"]} in namespace #{sleep_schedule["metadata"]["namespace"]}")
-    K8s.Client.run(Drowzee.K8s.conn(), K8s.Client.update(sleep_schedule))
+    result = K8s.Client.run(Drowzee.K8s.conn(), K8s.Client.update(sleep_schedule))
+    Logger.debug("Update result: #{inspect(result)}")
+    result
   end
 
   def update_heartbeat(sleep_schedule) do
