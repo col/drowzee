@@ -102,8 +102,7 @@ defmodule DrowzeeWeb.HomeLive.Index do
   @impl true
   def handle_event("toggle_enabled", %{"name" => name, "namespace" => namespace}, socket) do
     sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
-    enabled = sleep_schedule["spec"]["enabled"]
-    new_enabled = not enabled
+    new_enabled = not Map.get(sleep_schedule["spec"], "enabled", true)
     updated_sleep_schedule =
       put_in(sleep_schedule, ["spec", "enabled"], new_enabled)
       |> Drowzee.K8s.update_sleep_schedule()
