@@ -1,10 +1,33 @@
 version: 2
 updates:
-  - package-ecosystem: terraform
+  # Maintain dependencies of docker images
+  - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: weekly
+      interval: "daily"
+
+  # Maintain dependencies of GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    commit-message:
+      prefix: "ci:"
+    schedule:
+      interval: "daily"
+    labels:
+      - "Type: Dependencies"
+      - "Component: CI/CD"
+
+  # Maintain dependencies of elixir applications
+  - package-ecosystem: "mix"
+    directory: "/"
+    commit-message:
+      prefix: "build:"
+    schedule:
+      interval: "daily"
+    labels:
+      - "Type: Dependencies"
+      - "Implementation: Elixir"
     groups:
-      all:
+      elixir-deps:
         patterns:
           - "*"

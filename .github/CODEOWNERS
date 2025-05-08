@@ -1,4 +1,3 @@
 # CODEOWNERS file allows us to set owners for specific files and directories
 # https://docs.github.com/en/enterprise-cloud@latest/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
 
-* @chirpwireless/infra
