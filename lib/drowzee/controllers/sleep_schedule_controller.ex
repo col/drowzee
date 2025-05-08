@@ -20,7 +20,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
     end
   end
 
-  def handle_event(%Bonny.Axn{action: action} = axn, _opts)
+  def handle_event_enabled(%Bonny.Axn{action: action} = axn, _opts)
       when action in [:add, :modify, :reconcile] do
     Logger.metadata(
       schedule: axn.resource["metadata"]["name"],
@@ -35,7 +35,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
   end
 
   # delete the resource
-  def handle_event(%Bonny.Axn{action: :delete} = axn, _opts) do
+  def handle_event_enabled(%Bonny.Axn{action: :delete} = axn, _opts) do
     Logger.warning("Delete Action - Not yet implemented!")
     # TODO:
     # - Make sure deployments are awake
