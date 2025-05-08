@@ -53,6 +53,10 @@ spec:
                 - sleepTime
                 - timezone
               properties:
+                enabled:
+                  type: boolean
+                  description: Whether the schedule is enabled
+                  default: true
                 deployments:
                   type: array
                   description: The deployments that will be slept/woken.
@@ -98,7 +102,7 @@ spec:
       storage: true
       additionalPrinterColumns:
         - name: Enabled
-          type: string
+          type: boolean
           description: Enabled
           jsonPath: .spec.enabled
         - name: SleepTime
