@@ -36,7 +36,7 @@ jobs:
           echo "new_version=$VERSION" >> $GITHUB_OUTPUT
       - name: "Create a summary"
         run: |
-          echo "Building a new revision ${{steps.version.outputs.new_version}}\n" > $GITHUB_STEP_SUMMARY
+          echo "Building a new revision ${{steps.version.outputs.new_version}}" >> $GITHUB_STEP_SUMMARY
           echo "Building a new chart revision ${{steps.chart_version.outputs.new_version}}" >> $GITHUB_STEP_SUMMARY
 
   build-docker-image:

@@ -109,4 +109,8 @@ defmodule Drowzee.K8s do
     |> K8s.Client.put_conn(conn())
     |> K8s.Client.run()
   end
+
+  def update_sleep_schedule(sleep_schedule) do
+    Drowzee.K8s.SleepSchedule.update_sleep_schedule(sleep_schedule)
+  end
 end
