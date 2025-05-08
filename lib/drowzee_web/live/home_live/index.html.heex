@@ -128,16 +128,16 @@
               phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
               class={
                 if sleep_schedule["spec"]["enabled"] == false do
-                  "px-4 py-2 text-sm rounded-lg bg-gray-400 text-white hover:bg-gray-500"
+                  "px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600"
                 else
-                  "px-4 py-2 text-sm rounded-lg bg-yellow-400 text-white hover:bg-yellow-500"
+                  "px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600"
                 end
               }
             >
               <%= if sleep_schedule["spec"]["enabled"] == false do %>
-                ▶️ Enable
+                ▷ Enable
               <% else %>
-                ⏸️ Disable
+                || Disable
               <% end %>
             </.link>
           </div>
