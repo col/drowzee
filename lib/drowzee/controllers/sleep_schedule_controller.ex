@@ -11,7 +11,7 @@ defmodule Drowzee.Controller.SleepScheduleController do
   step Bonny.Pluggable.SkipObservedGenerations
   step :handle_event
 
-  def handle_event(%Bonny.Axn{resource: %{"spec" => %{"enabled" => false}}} = axn, _opts) do
+  def handle_event(%Bonny.Axn{resource: %{"spec" => spec}} = axn, _opts) when Map.get(spec, "enabled", true) == false do
     Logger.info("Schedule #{axn.resource["metadata"]["name"]} is disabled. Skipping.")
     axn
   end

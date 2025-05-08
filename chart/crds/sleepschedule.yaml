@@ -97,6 +97,10 @@ spec:
                   description: "The time that the deployment will wake up (format: HH:MMam/pm)"
       storage: true
       additionalPrinterColumns:
+        - name: Enabled
+          type: string
+          description: Enabled
+          jsonPath: .spec.enabled
         - name: SleepTime
           type: string
           description: Starts Sleeping
