@@ -1,4 +1,21 @@
-<div class="w-full max-w-3xl mx-auto p-6 space-y-10">
+<div class="flex">
+  <!-- Sidebar Table of Contents -->
+  <nav class="hidden md:flex flex-col w-64 min-h-screen sticky top-0 left-0 bg-yellow-50 border-r border-yellow-200 p-6 space-y-2 z-20">
+    <span class="font-semibold text-gray-700 mb-2">Jump to schedule:</span>
+    <%= for schedule <- @filtered_sleep_schedules || @sleep_schedules do %>
+      <a href={"#schedule-#{schedule["metadata"]["namespace"]}-#{schedule["metadata"]["name"]}"}
+         class="text-blue-700 hover:underline px-2 py-1 rounded transition-colors duration-150 bg-blue-50 hover:bg-blue-100 text-sm truncate">
+        <%= if @namespace == nil do %>
+          <%= String.capitalize(schedule["metadata"]["namespace"]) %> /
+        <% end %>
+        <%= String.capitalize(schedule["metadata"]["name"]) %>
+      </a>
+    <% end %>
+  </nav>
+
+  <!-- Main Content -->
+  <div class="flex-1 max-w-3xl mx-auto p-6 space-y-10 md:ml-64">
+
     <div class="flex justify-between items-center h-auto rounded-xl shadow-lg p-4" style="background-color: #F8E892;">    
       <.link navigate={~p"/"} class="flex items-center">
         <img src={~p"/images/logo.jpeg"} alt="Logo" class="w-40" />
@@ -23,40 +40,54 @@
       </.form>
     </div>
 
-  <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-  <%= if @namespace == nil do %>
-    <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4">All namespaces</h2>
-  <% else %>
-    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
-      <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4 mb-4 sm:mb-0">
-        <.link navigate={~p"/#{@namespace}"}>
-          <%= String.capitalize(@namespace) %> Namespace
-        </.link>
-        <%= if @name != nil do %>
-           / <%= String.capitalize(@name) %>
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+    <%= if @namespace == nil do %>
+      <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4">All namespaces</h2>
+    <% else %>
+      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
+        <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4 mb-4 sm:mb-0">
+          <.link navigate={~p"/#{@namespace}"}>
+            <%= String.capitalize(@namespace) %> Namespace
+          </.link>
+          <%= if @name != nil do %>
+            / <%= String.capitalize(@name) %>
+          <% end %>
+        </h2>
+        <%= if @sleep_schedules != [] do %>
+        <div class="flex flex-wrap gap-2 ml-4 mt-2 sm:ml-0">
+          <.link phx-click="sleep_all_schedules"
+                phx-value-namespace={@namespace}
+                data-confirm={"Are you sure you want to sleep all schedules in the #{@namespace} namespace?"}
+                class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed">
+            😴 Sleep All
+          </.link>
+          <.link phx-click="wake_all_schedules"
+                phx-value-namespace={@namespace}
+                data-confirm={"Are you sure you want to wake all schedules in the #{@namespace} namespace?"}
+                class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed">
+            ☕️ Wake All
+          </.link>
+        </div>
         <% end %>
-      </h2>
-      <%= if @sleep_schedules != [] do %>
-      <div class="flex flex-wrap gap-2 ml-4 mt-2 sm:ml-0">
-        <.link phx-click="sleep_all_schedules"
-               phx-value-namespace={@namespace}
-               data-confirm={"Are you sure you want to sleep all schedules in the #{@namespace} namespace?"}
-               class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed">
-          😴 Sleep All
-        </.link>
-        <.link phx-click="wake_all_schedules"
-               phx-value-namespace={@namespace}
-               data-confirm={"Are you sure you want to wake all schedules in the #{@namespace} namespace?"}
-               class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed">
-          ☕️ Wake All
-        </.link>
       </div>
-      <% end %>
+    <% end %>
     </div>
-  <% end %>
-</div>
 
-  <ul class="space-y-8">
+    <!-- Mobile Table of Contents -->
+    <nav class="md:hidden mb-8 p-4 bg-yellow-50 rounded-xl shadow flex flex-wrap gap-2 sticky top-2 z-10">
+      <span class="font-semibold text-gray-700 mr-2">Jump to schedule:</span>
+      <%= for schedule <- @filtered_sleep_schedules || @sleep_schedules do %>
+        <a href={"#schedule-#{schedule["metadata"]["namespace"]}-#{schedule["metadata"]["name"]}"}
+          class="text-blue-700 hover:underline px-2 py-1 rounded transition-colors duration-150 bg-blue-50 hover:bg-blue-100 text-sm">
+          <%= if @namespace == nil do %>
+            <%= String.capitalize(schedule["metadata"]["namespace"]) %> /
+          <% end %>
+          <%= String.capitalize(schedule["metadata"]["name"]) %>
+        </a>
+      <% end %>
+    </nav>
+
+    <ul class="space-y-8">
     <%= if @sleep_schedules == [] do %>
       <li class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
         <div class="flex justify-between items-center">
@@ -68,7 +99,7 @@
     <% end %>
 
     <%= for sleep_schedule <- @filtered_sleep_schedules || @sleep_schedules do %>
-      <li class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+      <li id={"schedule-#{sleep_schedule["metadata"]["namespace"]}-#{sleep_schedule["metadata"]["name"]}"} class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
         <div class="flex justify-between items-center">
           <h2 class="text-2xl font-semibold text-gray-800">
             <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
@@ -252,5 +283,6 @@
         <% end %>
       </li>
     <% end %>
-  </ul>
+    </ul>
+  </div>
 </div>
