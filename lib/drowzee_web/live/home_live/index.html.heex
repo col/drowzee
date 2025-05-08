@@ -2,29 +2,46 @@
   <!-- Cloud-shaped Table of Contents - Desktop & Mobile -->
   <div class="md:sticky md:top-4 md:self-start md:mr-4 md:w-72 z-30">
     <div class="fixed md:relative top-2 right-2 md:top-0 md:right-0 md:left-0 pointer-events-auto">
-      <button class="md:hidden absolute -top-2 -left-2 z-40 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md" onclick="toggleTOC()">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+      <button
+        class="md:hidden absolute -top-2 -left-2 z-40 bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-md"
+        onclick="toggleTOC()"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-5 w-5"
+          viewBox="0 0 20 20"
+          fill="currentColor"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+            clip-rule="evenodd"
+          />
         </svg>
       </button>
-      <div id="cloudTOC" class="bg-blue-50 rounded-3xl shadow-lg p-5 border-2 border-blue-100 relative overflow-hidden hidden md:block transform transition-transform hover:scale-102 w-56 md:w-auto">
+      <div
+        id="cloudTOC"
+        class="bg-blue-50 rounded-3xl shadow-lg p-5 border-2 border-blue-100 relative overflow-hidden hidden md:block transform transition-transform hover:scale-102 w-56 md:w-auto"
+      >
         <!-- Cloud decorations -->
         <div class="absolute -top-6 -left-6 w-16 h-16 rounded-full bg-white opacity-70"></div>
         <div class="absolute -top-2 left-6 w-10 h-10 rounded-full bg-white opacity-60"></div>
         <div class="absolute top-1/4 -right-6 w-12 h-12 rounded-full bg-white opacity-70"></div>
         <div class="absolute -bottom-4 -left-4 w-14 h-14 rounded-full bg-white opacity-70"></div>
-        
+
         <div class="relative z-10">
           <h3 class="font-semibold text-gray-700 mb-3 text-center">Jump to schedule</h3>
           <div class="max-h-[calc(100vh-200px)] overflow-y-auto pr-1 space-y-2">
             <%= for schedule <- @filtered_sleep_schedules || @sleep_schedules do %>
-              <a href={"#schedule-#{schedule["metadata"]["namespace"]}-#{schedule["metadata"]["name"]}"}
-                class="flex text-gray-800 hover:text-black px-3 py-2 rounded-xl transition-all duration-200 bg-white bg-opacity-70 hover:bg-opacity-100 text-sm truncate shadow-sm hover:shadow">
+              <a
+                href={"#schedule-#{schedule["metadata"]["namespace"]}-#{schedule["metadata"]["name"]}"}
+                class="flex text-gray-800 hover:text-black px-3 py-2 rounded-xl transition-all duration-200 bg-white bg-opacity-70 hover:bg-opacity-100 text-sm truncate shadow-sm hover:shadow"
+              >
                 <span class="truncate">
                   <%= if @namespace == nil do %>
-                    <%= String.capitalize(schedule["metadata"]["namespace"]) %> /
+                    {String.capitalize(schedule["metadata"]["namespace"])} /
                   <% end %>
-                  <%= String.capitalize(schedule["metadata"]["name"]) %>
+                  {String.capitalize(schedule["metadata"]["name"])}
                 </span>
               </a>
             <% end %>
@@ -33,22 +50,19 @@
       </div>
     </div>
   </div>
-
-  <!-- Main Content -->
+  
+<!-- Main Content -->
   <div class="flex-1 max-w-3xl p-6 space-y-10 md:mx-auto">
-
-    <div class="flex justify-between items-center h-auto rounded-xl shadow-lg p-4" style="background-color: #F8E892;">    
+    <div
+      class="flex justify-between items-center h-auto rounded-xl shadow-lg p-4"
+      style="background-color: #F8E892;"
+    >
       <.link navigate={~p"/"} class="flex items-center">
         <img src={~p"/images/logo.jpeg"} alt="Logo" class="w-40" />
-        <h1 class="text-4xl font-bold text-gray-800 ml-2">Drowzee</h1>    
+        <h1 class="text-4xl font-bold text-gray-800 ml-2">Drowzee</h1>
       </.link>
 
-      <.form
-        for={%{}}
-        phx-change="search"
-        phx-submit="search"
-        class="ml-auto mr-2"
-      >
+      <.form for={%{}} phx-change="search" phx-submit="search" class="ml-auto mr-2">
         <.input
           type="text"
           name="search"
@@ -62,36 +76,40 @@
     </div>
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-    <%= if @namespace == nil do %>
-      <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4">All namespaces</h2>
-    <% else %>
-      <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
-        <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4 mb-4 sm:mb-0">
-          <.link navigate={~p"/#{@namespace}"}>
-            <%= String.capitalize(@namespace) %> Namespace
-          </.link>
-          <%= if @name != nil do %>
-            / <%= String.capitalize(@name) %>
-          <% end %>
-        </h2>
-        <%= if @sleep_schedules != [] do %>
-        <div class="flex flex-wrap gap-2 ml-4 mt-2 sm:ml-0">
-          <.link phx-click="sleep_all_schedules"
+      <%= if @namespace == nil do %>
+        <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4">All namespaces</h2>
+      <% else %>
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center w-full">
+          <h2 class="text-2xl font-bold text-gray-800 mt-2 ml-4 mb-4 sm:mb-0">
+            <.link navigate={~p"/#{@namespace}"}>
+              {String.capitalize(@namespace)} Namespace
+            </.link>
+            <%= if @name != nil do %>
+              / {String.capitalize(@name)}
+            <% end %>
+          </h2>
+          <%= if @sleep_schedules != [] do %>
+            <div class="flex flex-wrap gap-2 ml-4 mt-2 sm:ml-0">
+              <.link
+                phx-click="sleep_all_schedules"
                 phx-value-namespace={@namespace}
                 data-confirm={"Are you sure you want to sleep all schedules in the #{@namespace} namespace?"}
-                class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed">
-            😴 Sleep All
-          </.link>
-          <.link phx-click="wake_all_schedules"
+                class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
+              >
+                😴 Sleep All
+              </.link>
+              <.link
+                phx-click="wake_all_schedules"
                 phx-value-namespace={@namespace}
                 data-confirm={"Are you sure you want to wake all schedules in the #{@namespace} namespace?"}
-                class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed">
-            ☕️ Wake All
-          </.link>
+                class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed"
+              >
+                ☕️ Wake All
+              </.link>
+            </div>
+          <% end %>
         </div>
-        <% end %>
-      </div>
-    <% end %>
+      <% end %>
     </div>
 
     <script>
@@ -103,7 +121,7 @@
           toc.classList.add('hidden');
         }
       }
-      
+
       // Close TOC when clicking on a link (mobile only)
       document.addEventListener('DOMContentLoaded', function() {
         const toc = document.getElementById('cloudTOC');
@@ -119,201 +137,218 @@
     </script>
 
     <ul class="space-y-8">
-    <%= if @sleep_schedules == [] do %>
-      <li class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
-        <div class="flex justify-between items-center">
-          <h2 class="text-2xl font-semibold text-gray-800">
-            No sleep schedules found
-          </h2>
-        </div>
-      </li>
-    <% end %>
-
-    <%= for sleep_schedule <- @filtered_sleep_schedules || @sleep_schedules do %>
-      <li id={"schedule-#{sleep_schedule["metadata"]["namespace"]}-#{sleep_schedule["metadata"]["name"]}"} class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
-        <div class="flex justify-between items-center">
-          <h2 class="text-2xl font-semibold text-gray-800">
-            <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
-              🛌
-            <% else %>
-              😃
-            <% end %>
-            <%= if @namespace == nil do %>
-              <.link navigate={~p"/#{sleep_schedule["metadata"]["namespace"]}"}>
-                <%= String.capitalize(sleep_schedule["metadata"]["namespace"]) %>
-              </.link> /
-            <% end %>
-            <.link navigate={~p"/#{sleep_schedule["metadata"]["namespace"]}/#{sleep_schedule["metadata"]["name"]}"}>
-              <%= String.capitalize(sleep_schedule["metadata"]["name"]) %>
-            </.link>
-            <%= if sleep_schedule_host(sleep_schedule) != nil do %>
-              <.link href={"http://#{sleep_schedule_host(sleep_schedule)}"} target="_blank">
-                <.icon name="hero-arrow-top-right-on-square" class="inline-block w-6 h-6 ml-1 mb-2 text-gray-800" />              
-              </.link>
-            <% end %>
-          </h2>
-          <div class="flex gap-2 items-center">
-            <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
-              <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
-                <button class="px-4 py-2 text-sm rounded-lg bg-green-300 text-white cursor-not-allowed">
-                  ☕️ Waking up...
-                </button>
-              <% else %>
-                <.link
-                  phx-click="wake_schedule"
-                  phx-value-name={sleep_schedule["metadata"]["name"]}
-                  phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-                  class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed"
-                >
-                  ☕️ Wake Up
-                </.link>
-              <% end %>
-            <% else %>
-              <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
-                <button class="px-4 py-2 text-sm rounded-lg bg-blue-300 text-white cursor-not-allowed">
-                  💤 Sleeping...
-                </button>
-              <% else %>
-                <.link
-                  phx-click="sleep_schedule"
-                  phx-value-name={sleep_schedule["metadata"]["name"]}
-                  phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-                  class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
-                >
-                  💤 Sleep
-                </.link>
-              <% end %>
-            <% end %>
-            <.link
-              phx-click="toggle_enabled"
-              phx-value-name={sleep_schedule["metadata"]["name"]}
-              phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-              class={
-                if sleep_schedule["spec"]["enabled"] == false do
-                  "px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600"
-                else
-                  "px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600"
-                end
-              }
-            >
-              <%= if sleep_schedule["spec"]["enabled"] == false do %>
-                ▷ Enable
-              <% else %>
-                || Disable
-              <% end %>
-            </.link>
+      <%= if @sleep_schedules == [] do %>
+        <li class="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+          <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-semibold text-gray-800">
+              No sleep schedules found
+            </h2>
           </div>
-        </div>
+        </li>
+      <% end %>
 
-        <div class="text-gray-600 mt-4">
-          🕒 <strong>Schedule:</strong>
-          <span><%= sleep_schedule["spec"]["sleepTime"] %> - <%= sleep_schedule["spec"]["wakeTime"] %> (<%= sleep_schedule["spec"]["timezone"] %>)</span>          
-        </div>
-
-        <%= if get_condition(sleep_schedule, "ManualOverride")["status"] == "True" do %>
-          <div class="text-gray-600 mt-2">
-            🛑 <strong>Manual override:</strong>
-            <span><%= case get_condition(sleep_schedule, "ManualOverride")["reason"] do
-              "Sleep" -> "Put to sleep "
-              "WakeUp" -> "Woken up "
-              _ -> "Manual override"
-            end %> at <%= last_transaction_time(sleep_schedule, "ManualOverride") %> (<%= sleep_schedule["spec"]["timezone"] %>)</span>
-            <span>
+      <%= for sleep_schedule <- @filtered_sleep_schedules || @sleep_schedules do %>
+        <li
+          id={"schedule-#{sleep_schedule["metadata"]["namespace"]}-#{sleep_schedule["metadata"]["name"]}"}
+          class="bg-white rounded-2xl shadow-md border border-gray-200 p-6"
+        >
+          <div class="flex justify-between items-center">
+            <h2 class="text-2xl font-semibold text-gray-800">
+              <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
+                🛌
+              <% else %>
+                😃
+              <% end %>
+              <%= if @namespace == nil do %>
+                <.link navigate={~p"/#{sleep_schedule["metadata"]["namespace"]}"}>
+                  {String.capitalize(sleep_schedule["metadata"]["namespace"])}
+                </.link>
+                /
+              <% end %>
+              <.link navigate={
+                ~p"/#{sleep_schedule["metadata"]["namespace"]}/#{sleep_schedule["metadata"]["name"]}"
+              }>
+                {String.capitalize(sleep_schedule["metadata"]["name"])}
+              </.link>
+              <%= if sleep_schedule_host(sleep_schedule) != nil do %>
+                <.link href={"http://#{sleep_schedule_host(sleep_schedule)}"} target="_blank">
+                  <.icon
+                    name="hero-arrow-top-right-on-square"
+                    class="inline-block w-6 h-6 ml-1 mb-2 text-gray-800"
+                  />
+                </.link>
+              <% end %>
+            </h2>
+            <div class="flex gap-2 items-center">
+              <%= if get_condition(sleep_schedule, "Sleeping")["status"] == "True" do %>
+                <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
+                  <button class="px-4 py-2 text-sm rounded-lg bg-green-300 text-white cursor-not-allowed">
+                    ☕️ Waking up...
+                  </button>
+                <% else %>
+                  <.link
+                    phx-click="wake_schedule"
+                    phx-value-name={sleep_schedule["metadata"]["name"]}
+                    phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
+                    class="px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 disabled:bg-green-300 disabled:cursor-not-allowed"
+                  >
+                    ☕️ Wake Up
+                  </.link>
+                <% end %>
+              <% else %>
+                <%= if get_condition(sleep_schedule, "Transitioning")["status"] == "True" do %>
+                  <button class="px-4 py-2 text-sm rounded-lg bg-blue-300 text-white cursor-not-allowed">
+                    💤 Sleeping...
+                  </button>
+                <% else %>
+                  <.link
+                    phx-click="sleep_schedule"
+                    phx-value-name={sleep_schedule["metadata"]["name"]}
+                    phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
+                    class="px-4 py-2 text-sm rounded-lg bg-blue-500 text-white hover:bg-blue-600 disabled:bg-blue-300 disabled:cursor-not-allowed"
+                  >
+                    💤 Sleep
+                  </.link>
+                <% end %>
+              <% end %>
               <.link
-                phx-click="remove_override"
+                phx-click="toggle_enabled"
                 phx-value-name={sleep_schedule["metadata"]["name"]}
                 phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
-                class="px-4 py-2 text-sm text-gray-600 hover:underline disabled:text-gray-300 disabled:cursor-not-allowed"
-                phx-disable-with="removing..."
+                class={
+                  if sleep_schedule["spec"]["enabled"] == false do
+                    "px-4 py-2 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600"
+                  else
+                    "px-4 py-2 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600"
+                  end
+                }
               >
-                <span class="inline-block mb-1 w-4 h-4 text-gray-600 hero-trash"></span>
+                <%= if sleep_schedule["spec"]["enabled"] == false do %>
+                  ▷ Enable
+                <% else %>
+                  || Disable
+                <% end %>
               </.link>
-            </span>
-          </div>
-        <% end %>
-
-        <%= if sleep_schedule["spec"]["deployments"] != [] do %>
-        <div class="mt-4">
-          <h3 class="text-lg font-medium text-gray-700 mb-2">📦 Deployments:</h3>
-          <ul class="grid grid-cols-2 gap-2 text-gray-700">
-            <%= for deployment <- sleep_schedule["spec"]["deployments"] do %>
-              <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
-                <% d = @deployments_by_name[deployment["name"]] %>
-                <%= if @name do %>
-                  <%= if d && (Map.get(d["spec"], "replicas", 0) > 0) do %>
-                    🚀
-                  <% else %>
-                    💤
-                  <% end %>
-                <% end %>
-                <span class="ml-1"><%= deployment["name"] %></span>
-              </li>
-            <% end %>
-          </ul>
-        </div>
-        <% end %>
-
-        <%= if (sleep_schedule["spec"]["statefulsets"] || []) != [] do %>
-        <div class="mt-4">
-          <h3 class="text-lg font-medium text-gray-700 mb-2">📦 StatefulSets:</h3>
-          <ul class="grid grid-cols-2 gap-2 text-gray-700">
-            <%= for statefulset <- sleep_schedule["spec"]["statefulsets"] || [] do %>
-              <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
-                <% s = @statefulsets_by_name[statefulset["name"]] %>
-                <%= if @name do %>
-                  <%= if s && (Map.get(s["spec"], "replicas", 0) > 0) do %>
-                    🚀
-                  <% else %>
-                    💤
-                  <% end %>
-                <% end %>
-                <span class="ml-1"><%= statefulset["name"] %></span>
-              </li>
-            <% end %>
-          </ul>
-        </div>
-        <% end %>
-
-        <%= if (sleep_schedule["spec"]["cronjobs"] || []) != [] do %>
-        <div class="mt-4">
-          <h3 class="text-lg font-medium text-gray-700 mb-2">📦 CronJobs:</h3>
-          <ul class="grid grid-cols-2 gap-2 text-gray-700">
-            <%= for cronjob <- sleep_schedule["spec"]["cronjobs"] || [] do %>
-              <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
-                <% c = @cronjobs_by_name[cronjob["name"]] %>
-                <%= if @name do %>
-                  <%= if c && Map.get(c["spec"], "suspend", false) == false do %>
-                    🚀
-                  <% else %>
-                    💤
-                  <% end %>
-                <% end %>
-                <span class="ml-1"><%= cronjob["name"] %></span>
-              </li>
-            <% end %>
-          </ul>
-        </div>
-        <% end %>
-
-        <%= if get_condition(sleep_schedule, "Error")["status"] == "True" do %>
-          <div class="grid grid-cols-2 sm:grid-cols-1 gap-4 mt-6 text-sm">
-            <div class="p-3 bg-gray-50 rounded-lg shadow-sm border">
-              <div class="flex justify-between items-center">
-                <div class="font-semibold text-gray-800 mb-1">
-                  🚨 Error                
-                </div>    
-                <div class="text-gray-800 mb-1">
-                  <%= last_transaction_time(sleep_schedule, "Error") %>                
-                </div>
-              </div>          
-              <div class="text-gray-500 text-xs mt-1">
-                <%= get_condition(sleep_schedule, "Error")["message"] %>
-              </div>
             </div>
           </div>
-        <% end %>
-      </li>
-    <% end %>
+
+          <div class="text-gray-600 mt-4">
+            🕒 <strong>Schedule:</strong>
+            <span>
+              {sleep_schedule["spec"]["sleepTime"]} - {sleep_schedule["spec"]["wakeTime"]} ({sleep_schedule[
+                "spec"
+              ]["timezone"]})
+            </span>
+          </div>
+
+          <%= if get_condition(sleep_schedule, "ManualOverride")["status"] == "True" do %>
+            <div class="text-gray-600 mt-2">
+              🛑 <strong>Manual override:</strong>
+              <span>
+                {case get_condition(sleep_schedule, "ManualOverride")["reason"] do
+                  "Sleep" -> "Put to sleep "
+                  "WakeUp" -> "Woken up "
+                  _ -> "Manual override"
+                end} at {last_transaction_time(sleep_schedule, "ManualOverride")} ({sleep_schedule[
+                  "spec"
+                ]["timezone"]})
+              </span>
+              <span>
+                <.link
+                  phx-click="remove_override"
+                  phx-value-name={sleep_schedule["metadata"]["name"]}
+                  phx-value-namespace={sleep_schedule["metadata"]["namespace"]}
+                  class="px-4 py-2 text-sm text-gray-600 hover:underline disabled:text-gray-300 disabled:cursor-not-allowed"
+                  phx-disable-with="removing..."
+                >
+                  <span class="inline-block mb-1 w-4 h-4 text-gray-600 hero-trash"></span>
+                </.link>
+              </span>
+            </div>
+          <% end %>
+
+          <%= if sleep_schedule["spec"]["deployments"] != [] do %>
+            <div class="mt-4">
+              <h3 class="text-lg font-medium text-gray-700 mb-2">📦 Deployments:</h3>
+              <ul class="grid grid-cols-2 gap-2 text-gray-700">
+                <%= for deployment <- sleep_schedule["spec"]["deployments"] do %>
+                  <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
+                    <% d = @deployments_by_name[deployment["name"]] %>
+                    <%= if @name do %>
+                      <%= if d && (Map.get(d["spec"], "replicas", 0) > 0) do %>
+                        🚀
+                      <% else %>
+                        💤
+                      <% end %>
+                    <% end %>
+                    <span class="ml-1">{deployment["name"]}</span>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <%= if (sleep_schedule["spec"]["statefulsets"] || []) != [] do %>
+            <div class="mt-4">
+              <h3 class="text-lg font-medium text-gray-700 mb-2">📦 StatefulSets:</h3>
+              <ul class="grid grid-cols-2 gap-2 text-gray-700">
+                <%= for statefulset <- sleep_schedule["spec"]["statefulsets"] || [] do %>
+                  <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
+                    <% s = @statefulsets_by_name[statefulset["name"]] %>
+                    <%= if @name do %>
+                      <%= if s && (Map.get(s["spec"], "replicas", 0) > 0) do %>
+                        🚀
+                      <% else %>
+                        💤
+                      <% end %>
+                    <% end %>
+                    <span class="ml-1">{statefulset["name"]}</span>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <%= if (sleep_schedule["spec"]["cronjobs"] || []) != [] do %>
+            <div class="mt-4">
+              <h3 class="text-lg font-medium text-gray-700 mb-2">📦 CronJobs:</h3>
+              <ul class="grid grid-cols-2 gap-2 text-gray-700">
+                <%= for cronjob <- sleep_schedule["spec"]["cronjobs"] || [] do %>
+                  <li class="bg-gray-100 rounded-lg px-3 py-1 text-sm">
+                    <% c = @cronjobs_by_name[cronjob["name"]] %>
+                    <%= if @name do %>
+                      <%= if c && Map.get(c["spec"], "suspend", false) == false do %>
+                        🚀
+                      <% else %>
+                        💤
+                      <% end %>
+                    <% end %>
+                    <span class="ml-1">{cronjob["name"]}</span>
+                  </li>
+                <% end %>
+              </ul>
+            </div>
+          <% end %>
+
+          <%= if get_condition(sleep_schedule, "Error")["status"] == "True" do %>
+            <div class="grid grid-cols-2 sm:grid-cols-1 gap-4 mt-6 text-sm">
+              <div class="p-3 bg-gray-50 rounded-lg shadow-sm border">
+                <div class="flex justify-between items-center">
+                  <div class="font-semibold text-gray-800 mb-1">
+                    🚨 Error
+                  </div>
+                  <div class="text-gray-800 mb-1">
+                    {last_transaction_time(sleep_schedule, "Error")}
+                  </div>
+                </div>
+                <div class="text-gray-500 text-xs mt-1">
+                  {get_condition(sleep_schedule, "Error")["message"]}
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </li>
+      <% end %>
     </ul>
   </div>
 </div>
