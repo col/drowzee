@@ -33,8 +33,8 @@ spec:
                       status:
                         type: string
                         enum:
-                          - 'True'
-                          - 'False'
+                          - "True"
+                          - "False"
                       type:
                         type: string
                       reason:
@@ -52,12 +52,34 @@ spec:
               required:
                 - sleepTime
                 - timezone
-                - wakeTime
-                - deployments
               properties:
+                enabled:
+                  type: boolean
+                  description: Whether the schedule is enabled
+                  default: true
                 deployments:
                   type: array
                   description: The deployments that will be slept/woken.
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                statefulsets:
+                  type: array
+                  description: The statefulsets that will be slept/woken.
+                  items:
+                    type: object
+                    required:
+                      - name
+                    properties:
+                      name:
+                        type: string
+                cronjobs:
+                  type: array
+                  description: The cronjobs that will be suspended/resumed.
                   items:
                     type: object
                     required:
@@ -70,15 +92,19 @@ spec:
                   description: The ingress that will be slept/woken.
                 sleepTime:
                   type: string
-                  description: 'The time that the deployment will start sleeping(format: HH:MMam/pm)'
+                  description: "The time that the deployment will start sleeping(format: HH:MMam/pm)"
                 timezone:
                   type: string
                   description: The timezone that the input times are based in
                 wakeTime:
                   type: string
-                  description: 'The time that the deployment will wake up (format: HH:MMam/pm)'
+                  description: "The time that the deployment will wake up (format: HH:MMam/pm)"
       storage: true
       additionalPrinterColumns:
+        - name: Enabled
+          type: boolean
+          description: Enabled
+          jsonPath: .spec.enabled
         - name: SleepTime
           type: string
           description: Starts Sleeping
@@ -95,6 +121,14 @@ spec:
           type: string
           description: Deployments
           jsonPath: .spec.deployments[*].name
+        - name: StatefulSets
+          type: string
+          description: StatefulSets
+          jsonPath: .spec.statefulsets[*].name
+        - name: CronJobs
+          type: string
+          description: CronJobs
+          jsonPath: .spec.cronjobs[*].name
         - name: Sleeping?
           type: string
           description: Current Status

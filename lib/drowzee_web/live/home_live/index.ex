@@ -100,6 +100,21 @@ defmodule DrowzeeWeb.HomeLive.Index do
   end
 
   @impl true
+  def handle_event("toggle_enabled", %{"name" => name, "namespace" => namespace}, socket) do
+    sleep_schedule = Drowzee.K8s.get_sleep_schedule!(name, namespace)
+    new_enabled = not Map.get(sleep_schedule["spec"], "enabled", true)
+    updated_sleep_schedule =
+      put_in(sleep_schedule, ["spec", "enabled"], new_enabled)
+      |> Drowzee.K8s.update_sleep_schedule()
+      |> case do
+        {:ok, s} -> s
+        {:error, _} -> sleep_schedule
+      end
+    socket = replace_sleep_schedule(socket, updated_sleep_schedule)
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("sleep_all_schedules", %{"namespace" => namespace}, socket) when is_binary(namespace) do
     sleep_schedules = Drowzee.K8s.sleep_schedules(namespace)
 
@@ -184,9 +199,48 @@ defmodule DrowzeeWeb.HomeLive.Index do
         [Drowzee.K8s.get_sleep_schedule!(name, socket.assigns.namespace)]
     end
 
+    {deployments_by_name, statefulsets_by_name, cronjobs_by_name} =
+      case socket.assigns.name do
+        nil -> {%{}, %{}, %{}}
+        _name ->
+          deployments =
+            sleep_schedules
+            |> Enum.flat_map(fn schedule ->
+              case Drowzee.K8s.SleepSchedule.get_deployments(schedule) do
+                {:ok, ds} -> ds
+                {:error, _} -> []
+              end
+            end)
+          statefulsets =
+            sleep_schedules
+            |> Enum.flat_map(fn schedule ->
+              case Drowzee.K8s.SleepSchedule.get_statefulsets(schedule) do
+                {:ok, ss} -> ss
+                {:error, _} -> []
+              end
+            end)
+          cronjobs =
+            sleep_schedules
+            |> Enum.flat_map(fn schedule ->
+              case Drowzee.K8s.SleepSchedule.get_cronjobs(schedule) do
+                {:ok, cs} -> cs
+                {:error, _} -> []
+              end
+            end)
+          {
+            Map.new(deployments, &{&1["metadata"]["name"], &1}),
+            Map.new(statefulsets, &{&1["metadata"]["name"], &1}),
+            Map.new(cronjobs, &{&1["metadata"]["name"], &1})
+          }
+      end
+
     socket
     |> assign(:sleep_schedules, sleep_schedules)
+    |> assign(:deployments_by_name, deployments_by_name)
+    |> assign(:statefulsets_by_name, statefulsets_by_name)
+    |> assign(:cronjobs_by_name, cronjobs_by_name)
     |> filter_sleep_schedules(socket.assigns.search)
+
   end
 
   def sleep_schedule_host(sleep_schedule) do

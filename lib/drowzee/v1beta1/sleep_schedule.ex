@@ -51,6 +51,11 @@ defmodule Drowzee.API.V1Beta1.SleepSchedule do
             spec: %{
               type: :object,
               properties: %{
+                enabled: %{
+                  type: :boolean,
+                  description: "Whether this schedule is enabled.",
+                  default: true
+                },
                 deployments: %{
                   description: "The deployments that will be slept/woken.",
                   type: :array,
@@ -87,10 +92,13 @@ defmodule Drowzee.API.V1Beta1.SleepSchedule do
         }
       },
       additionalPrinterColumns: [
+        %{name: "Enabled", type: :boolean, description: "Enabled", jsonPath: ".spec.enabled"},
         %{name: "SleepTime", type: :string, description: "Starts Sleeping", jsonPath: ".spec.sleepTime"},
         %{name: "WakeTime", type: :string, description: "Wakes Up", jsonPath: ".spec.wakeTime"},
         %{name: "Timezone", type: :string, description: "Timezone", jsonPath: ".spec.timezone"},
         %{name: "Deployments", type: :string, description: "Deployments", jsonPath: ".spec.deployments[*].name"},
+        %{name: "Statefulsets", type: :string, description: "Statefulsets", jsonPath: ".spec.statefulsets[*].name"},
+        %{name: "Cronjobs", type: :string, description: "CronJobs", jsonPath: ".spec.cronjobs[*].name"},
         %{name: "Sleeping?", type: :string, description: "Current Status", jsonPath: ".status.conditions[?(@.type == \"Sleeping\")].status"},
         %{name: "Transitioning?", type: :string, description: "Status Change In Progress", jsonPath: ".status.conditions[?(@.type == \"Transitioning\")].status"},
         %{name: "ManualOverride?", type: :string, description: "Status overridden by user", jsonPath: ".status.conditions[?(@.type == \"ManualOverride\")].status"}

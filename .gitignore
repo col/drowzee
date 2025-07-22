@@ -35,6 +35,24 @@ drowzee-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# Elixir Language Server
+.elixir_ls/
+
+# Environment files
+.env
+.env.*
+
+# Editor swap/backup files
+*.swp
+*.swo
+*.bak
+
+# Generic log files
+*.log
+
+# macOS
 .DS_Store
+
+# Local config/log files
 local_values.yaml
-dorwzee-logs.txt
+drowzee-logs.txt

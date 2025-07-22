@@ -13,7 +13,7 @@ ENV MIX_ENV=prod \
 #     && apt-get clean && rm -f /var/lib/apt/lists/*_*
 
 RUN mix local.hex --force && \
-    mix local.rebar --force
+  mix local.rebar --force
 
 WORKDIR /app
 
